@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Class D Deception - Reader Edition</title>
+<style>
+  /* ---------------------------------------------------------------------
+     Manga/media-reader inspired palette: dark slate base, cyan + magenta
+     accents. Deliberately NOT the crimson/gold Classroom-of-the-Elite
+     theme (index/index2) and NOT the flat quiz palette (index3).
+     Colors tuned so text/background pairings clear WCAG AA in both modes.
+  --------------------------------------------------------------------- */
+  :root, html[data-theme="dark"] {
+    --bg: #0a0d14;
+    --bg-soft: #0e1220;
+    --surface: #141a29;
+    --surface-2: #1a2133;
+    --surface-hover: #202940;
+    --border: #263049;
+    --border-soft: #1d2538;
+    --text: #e7ecf7;
+    --text-heading: #ffffff;
+    --text-muted: #90a0c0;
+    --text-faint: #5f6d8c;
+    --cyan: #34e0e0;
+    --cyan-soft: rgba(52, 224, 224, 0.14);
+    --magenta: #ff5fa8;
+    --magenta-soft: rgba(255, 95, 168, 0.14);
+    --amber: #ffb454;
+    --violet: #a78bfa;
+    --green: #4ade80;
+    --red: #ff6b6b;
+    --accent-grad: linear-gradient(135deg, var(--cyan), var(--magenta));
+    --shadow-lift: 0 18px 40px rgba(0, 0, 0, 0.45);
+    --shadow-card: 0 6px 18px rgba(0, 0, 0, 0.35);
+    --scrim: rgba(6, 8, 14, 0.72);
+  }
+
+  html[data-theme="light"] {
+    --bg: #f4f6fb;
+    --bg-soft: #eaeef7;
+    --surface: #ffffff;
+    --surface-2: #f2f4fa;
+    --surface-hover: #e8ecf7;
+    --border: #dbe1ee;
+    --border-soft: #e6eaf3;
+    --text: #232a3d;
+    --text-heading: #10131f;
+    --text-muted: #5b6a8a;
+    --text-faint: #8891a8;
+    --cyan: #0891a1;
+    --cyan-soft: rgba(8, 145, 161, 0.10);
+    --magenta: #c81b71;
+    --magenta-soft: rgba(200, 27, 113, 0.10);
+    --amber: #b5720b;
+    --violet: #7c3aed;
+    --green: #158a4d;
+    --red: #d13c3c;
+    --accent-grad: linear-gradient(135deg, var(--cyan), var(--magenta));
+    --shadow-lift: 0 18px 40px rgba(30, 40, 70, 0.18);
+    --shadow-card: 0 6px 16px rgba(30, 40, 70, 0.10);
+    --scrim: rgba(240, 243, 250, 0.75);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    transition: background-color 0.25s ease, color 0.25s ease;
+    min-height: 100vh;
+  }
+
+  a { color: inherit; }
+  button { font-family: inherit; }
+
+  /* ---------------------------- Top nav ---------------------------- */
+  .topnav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 12px 24px;
+    background: rgba(10, 13, 20, 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  html[data-theme="light"] .topnav { background: rgba(244, 246, 251, 0.82); }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.2px;
+    color: var(--text-heading);
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+  .brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--accent-grad);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 900;
+    color: #0a0d14;
+    flex: 0 0 auto;
+  }
+
+  .nav-search {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 420px;
+    margin: 0 auto 0 18px;
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-faint);
+  }
+  .nav-search svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--text-faint); }
+  .nav-search input {
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 13.5px;
+    width: 100%;
+  }
+  .nav-search input::placeholder { color: var(--text-faint); }
+  .nav-search:focus-within { border-color: var(--cyan); }
+
+  .nav-icons { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  }
+  .icon-btn:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-2px); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .icon-btn .dot {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--magenta);
+    box-shadow: 0 0 0 2px var(--surface);
+    animation: pulse-dot 2.4s ease-in-out infinite;
+  }
+  .icon-btn.profile {
+    background: var(--accent-grad);
+    color: #0a0d14;
+    font-weight: 800;
+    font-size: 12px;
+    border: none;
+  }
+  .icon-btn.profile:hover { color: #0a0d14; transform: translateY(-2px) scale(1.05); }
+
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.35); opacity: 0.6; }
+  }
+
+  /* ------------------------- Phase transitions ------------------------- */
+  #appInner {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.32s ease, transform 0.32s ease;
+  }
+  #appInner.transitioning { opacity: 0; transform: translateY(16px); }
+
+  /* ------------------------------- Hero ------------------------------- */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 56px 24px 64px;
+    background: radial-gradient(ellipse at 20% 0%, rgba(52,224,224,0.10), transparent 55%),
+                radial-gradient(ellipse at 85% 25%, rgba(255,95,168,0.10), transparent 50%),
+                var(--bg-soft);
+  }
+  .hero-bg-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-a { width: 420px; height: 420px; background: var(--cyan); top: -160px; left: -100px; animation: drift-a 22s ease-in-out infinite; }
+  .blob-b { width: 380px; height: 380px; background: var(--magenta); top: 40px; right: -140px; animation: drift-b 26s ease-in-out infinite; }
+  .blob-c { width: 300px; height: 300px; background: var(--violet); bottom: -180px; left: 35%; animation: drift-c 30s ease-in-out infinite; }
+  html[data-theme="light"] .hero-bg-blob { opacity: 0.18; }
+
+  @keyframes drift-a {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(60px, 50px) scale(1.15); }
+  }
+  @keyframes drift-b {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-70px, 40px) scale(1.1); }
+  }
+  @keyframes drift-c {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(40px, -50px) scale(1.2); }
+  }
+
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--cyan);
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+    animation: particle-float linear infinite;
+  }
+  @keyframes particle-float {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    10% { opacity: 0.55; }
+    90% { opacity: 0.4; }
+    100% { transform: translateY(-140px) translateX(20px); opacity: 0; }
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1160px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 44px;
+    align-items: center;
+  }
+  @media (max-width: 860px) {
+    .hero-inner { grid-template-columns: 1fr; }
+    .hero-cover { order: -1; margin: 0 auto; }
+  }
+
+  .hero-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .tag-pill {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 999px;
+    letter-spacing: 0.3px;
+    border: 1px solid transparent;
+  }
+  .tag-mystery { background: rgba(167,139,250,0.15); color: var(--violet); border-color: rgba(167,139,250,0.35); }
+  .tag-psych { background: var(--magenta-soft); color: var(--magenta); border-color: rgba(255,95,168,0.35); }
+  .tag-ai { background: var(--cyan-soft); color: var(--cyan); border-color: rgba(52,224,224,0.35); }
+  .tag-school { background: rgba(255,180,84,0.15); color: var(--amber); border-color: rgba(255,180,84,0.35); }
+
+  .hero-title {
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    margin: 0 0 14px;
+    color: var(--text-heading);
+    line-height: 1.05;
+  }
+  .hero-title .accent { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .hero-desc {
+    font-size: 15px;
+    color: var(--text-muted);
+    max-width: 560px;
+    margin: 0 0 20px;
+  }
+
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+  .rating-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-weight: 700;
+    color: var(--amber);
+  }
+  .rating-badge svg { width: 15px; height: 15px; fill: var(--amber); }
+  .meta-sep { color: var(--text-faint); }
+
+  .play-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent-grad);
+    color: #0a0d14;
+    font-size: 15.5px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(52, 224, 224, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+  .play-btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 14px 36px rgba(255, 95, 168, 0.3); filter: brightness(1.05); }
+  .play-btn:active { transform: translateY(0) scale(0.99); }
+  .play-btn svg { width: 18px; height: 18px; }
+
+  /* Cover art panel - stylized CSS/SVG, no real image */
+  .hero-cover {
+    width: 260px;
+    aspect-ratio: 3 / 4;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.035) 0 2px, transparent 2px 26px),
+      conic-gradient(from 200deg at 30% 20%, var(--cyan), var(--violet) 35%, var(--magenta) 65%, var(--cyan) 100%);
+    background-size: auto, 200% 200%;
+    animation: cover-hue 14s ease infinite;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lift);
+  }
+  @keyframes cover-hue {
+    0%, 100% { background-position: 0 0, 0% 50%; }
+    50% { background-position: 0 0, 100% 50%; }
+  }
+  .hero-cover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(6,8,14,0) 40%, rgba(6,8,14,0.75) 100%);
+  }
+  .hero-cover-glyph {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 92px;
+    font-weight: 900;
+    color: rgba(255,255,255,0.14);
+  }
+  .hero-cover-label {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    right: 14px;
+    color: #fff;
+    z-index: 1;
+  }
+  .hero-cover-label .case { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.75; margin-bottom: 3px; }
+  .hero-cover-label .title { font-size: 15px; font-weight: 800; }
+  .hero-cover-corner {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 4px 8px;
+    border-radius: 5px;
+    background: rgba(6,8,14,0.5);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+  }
+
+  /* ---------------------------- Cast grid ---------------------------- */
+  .section {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 40px 24px 70px;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .section-title { font-size: 20px; font-weight: 800; color: var(--text-heading); margin: 0; }
+  .section-sub { font-size: 13px; color: var(--text-faint); }
+
+  .cast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 18px;
+  }
+
+  .cast-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .cast-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: var(--shadow-lift);
+    border-color: var(--cyan);
+  }
+  .cast-portrait {
+    aspect-ratio: 3 / 4;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    font-weight: 900;
+    color: rgba(255,255,255,0.85);
+    overflow: hidden;
+  }
+  .cast-portrait .initials { position: relative; z-index: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.35); }
+  .cast-portrait::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%);
+  }
+  .cast-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: rgba(6,8,14,0.55);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .cast-hover-play {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(6, 8, 14, 0.45);
+    opacity: 0;
+    transition: opacity 0.22s ease;
+  }
+  .cast-card:hover .cast-hover-play { opacity: 1; }
+  .cast-hover-play span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--accent-grad);
+    color: #0a0d14;
+    font-weight: 800;
+    font-size: 12.5px;
+    transform: translateY(6px);
+    transition: transform 0.22s ease;
+  }
+  .cast-card:hover .cast-hover-play span { transform: translateY(0); }
+  .cast-hover-play svg { width: 12px; height: 12px; }
+
+  .cast-info { padding: 12px 12px 14px; }
+  .cast-name { font-size: 14.5px; font-weight: 700; color: var(--text-heading); margin-bottom: 2px; }
+  .cast-class { font-size: 11.5px; color: var(--text-faint); margin-bottom: 8px; }
+  .cast-teaser {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* --------------------------- Reader panel --------------------------- */
+  .reader-shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 24px 70px;
+  }
+  .progress-wrap { margin-bottom: 22px; }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--text-faint);
+    margin-bottom: 7px;
+    font-weight: 600;
+  }
+  .progress-track {
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent-grad);
+    border-radius: 999px;
+    transition: width 0.35s ease;
+  }
+
+  .speaker-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .speaker-portrait {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    flex: 0 0 auto;
+  }
+  .speaker-name { font-size: 15px; font-weight: 800; color: var(--text-heading); }
+  .speaker-class { font-size: 12px; color: var(--text-faint); }
+
+  .panel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: var(--shadow-card);
+  }
+  .panel-title { font-size: 18px; font-weight: 800; color: var(--text-heading); margin: 0 0 18px; }
+
+  .choice-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+  .choice-card {
+    text-align: left;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 14.5px;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  }
+  .choice-card:hover {
+    transform: translateY(-3px) scale(1.01);
+    border-color: var(--cyan);
+    background: var(--surface-hover);
+    box-shadow: 0 8px 20px rgba(52, 224, 224, 0.12);
+  }
+  .choice-card.selected {
+    border-color: var(--magenta);
+    background: var(--magenta-soft);
+    box-shadow: 0 8px 20px rgba(255, 95, 168, 0.15);
+    font-weight: 600;
+  }
+
+  .qa-tag { font-size: 12.5px; color: var(--text-faint); margin-bottom: 8px; font-weight: 600; }
+  .answer-bubble {
+    font-size: 15px;
+    line-height: 1.65;
+    padding: 18px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan);
+    border-radius: 10px;
+    margin-bottom: 22px;
+  }
+
+  .btn-row { text-align: right; }
+  .btn-row.center { text-align: center; }
+
+  .btn-primary {
+    padding: 12px 26px;
+    border: none;
+    border-radius: 9px;
+    background: var(--accent-grad);
+    color: #0a0d14;
+    font-size: 14.5px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+    box-shadow: 0 8px 22px rgba(52, 224, 224, 0.18);
+  }
+  .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.06); }
+  .btn-primary:disabled { background: var(--surface-2); color: var(--text-faint); cursor: not-allowed; box-shadow: none; transform: none; }
+
+  .btn-secondary {
+    padding: 12px 26px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: border-color 0.18s ease, transform 0.18s ease, color 0.18s ease;
+  }
+  .btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); transform: translateY(-2px); }
+
+  .intro-text { font-size: 14.5px; color: var(--text-muted); margin-bottom: 22px; }
+
+  /* ---------------------------- Guessing ---------------------------- */
+  .guess-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    margin-bottom: 10px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .guess-row:hover { border-color: var(--border); transform: translateY(-1px); }
+  .guess-name-row { display: flex; align-items: center; gap: 10px; }
+  .guess-name { font-size: 14.5px; font-weight: 700; color: var(--text-heading); }
+  .guess-class { font-size: 11.5px; color: var(--text-faint); font-weight: 400; }
+  .guess-toggle { display: flex; gap: 8px; flex: 0 0 auto; }
+  .toggle-pill {
+    padding: 8px 15px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.18s ease;
+  }
+  .toggle-pill:hover { border-color: var(--cyan); color: var(--cyan); }
+  .toggle-pill.selected { background: var(--accent-grad); border-color: transparent; color: #0a0d14; }
+  .guess-note { font-size: 12.5px; color: var(--text-faint); text-align: center; margin-top: 16px; }
+
+  /* ----------------------------- Reveal ----------------------------- */
+  .score-hero { text-align: center; margin-bottom: 8px; }
+  .score-num {
+    font-size: 46px;
+    font-weight: 900;
+    background: var(--accent-grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .score-of { font-size: 18px; color: var(--text-faint); font-weight: 700; }
+  .verdict-text { text-align: center; color: var(--text-muted); margin-bottom: 28px; font-size: 14px; }
+
+  .result-row {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .result-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .result-name { font-size: 15px; font-weight: 800; color: var(--text-heading); }
+  .result-tag-correct { color: var(--green); font-weight: 800; font-size: 12.5px; }
+  .result-tag-incorrect { color: var(--red); font-weight: 800; font-size: 12.5px; }
+  .result-detail { font-size: 12.5px; color: var(--text-faint); margin-bottom: 8px; }
+  .result-tells { font-size: 13px; color: var(--text-muted); }
+  .result-tells ul { margin: 6px 0 0; padding-left: 18px; }
+  .result-tells li { margin-bottom: 4px; }
+
+  .review-item {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .review-item-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .review-name { font-size: 15.5px; font-weight: 800; color: var(--text-heading); }
+  .review-qa { margin-bottom: 12px; }
+  .review-q { font-size: 12.5px; color: var(--text-faint); margin-bottom: 3px; font-weight: 600; }
+  .review-a { font-size: 14px; color: var(--text-muted); line-height: 1.55; }
+
+  @media (max-width: 520px) {
+    .nav-search { display: none; }
+    .hero { padding: 40px 16px 48px; }
+    .reader-shell, .section { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <div class="brand">
+    <span class="brand-mark">D</span>
+    <span>Class D Deception</span>
+  </div>
+  <div class="nav-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <input type="text" placeholder="Search suspects, tells, cases...">
+  </div>
+  <div class="nav-icons">
+    <button class="icon-btn" id="themeToggleBtn" type="button" title="Toggle light / dark mode" aria-label="Toggle light / dark mode"></button>
+    <button class="icon-btn" type="button" title="Notifications" aria-label="Notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+      <span class="dot"></span>
+    </button>
+    <button class="icon-btn profile" type="button" title="Profile" aria-label="Profile">CD</button>
+  </div>
+</nav>
+
+<div id="appInner"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // -------------------------------------------------------------------------
+  // Game data - ported directly from game.py (QUESTION_BANK, STUDENTS), same
+  // as index.html / index2.html / index3.html. This file only changes
+  // presentation: a manga/media-reader site layout with animated transitions.
+  // -------------------------------------------------------------------------
+
+  var QUESTION_BANK = [
+    ["alibi", "Where were you last night when the incident happened?"],
+    ["opinion_class", "What do you think about the class ranking system?"],
+    ["suspicious", "Have you noticed anyone acting strange recently?"],
+    ["honest", "Be honest with me - what's your real opinion of me?"],
+    ["secret", "Do you have any secrets you're hiding from the class?"]
+  ];
+
+  var QUESTIONS_PER_STUDENT = 3;
+
+  function randomChoice(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  var STUDENTS = [
+    {
+      name: "Airi Kurosawa",
+      className: "Class 1-B",
+      background: "A quiet, meticulous student who tracks everyone's test scores in a little notebook. Known for never breaking her routine.",
+      isAI: false,
+      responses: {
+        alibi: [
+          "I was in the library until 9pm. The librarian can confirm it - I logged out at exactly 21:03, like every Tuesday.",
+          "Studying in the west reading room, same as always. I signed the log at 20:47 if you want to check.",
+          "Home by 8. I reviewed last week's test rankings and went to bed at 10 - I keep a fixed schedule.",
+          "In my room, cross-referencing this month's scores against last month's. I can show you the notebook if it matters."
+        ],
+        opinion_class: [
+          "The point system rewards consistency. I don't waste time complaining about rules I can just optimize around.",
+          "It's not perfect, but it's predictable. Predictable is something you can actually plan around.",
+          "People complain about the ranking system because it's easier than improving their scores.",
+          "I track it too closely to have strong feelings about whether it's 'fair'. I just use it."
+        ],
+        suspicious: [
+          "Sudo-kun has been buying extra notebooks lately. Probably nothing.",
+          "Kaito's been talking to himself near the vending machines. Might just be nerves.",
+          "Haruto pauses before every sentence like he's translating from something. Never asked why.",
+          "Not really - though the transfer student seems to know facts before anyone tells him. Odd, not necessarily suspicious."
+        ],
+        honest: [
+          "You ask a lot of questions for someone who isn't a proctor. It's not a bad trait, in this class.",
+          "Honestly, most people here bore me. You at least ask decent questions.",
+          "I think you notice more than you let on. That's rare in this class.",
+          "You're more thorough than the last person who tried this. That's not nothing."
+        ],
+        secret: [
+          "Everyone has secrets. Mine aren't relevant to your little investigation.",
+          "If it doesn't affect the rankings, I don't see why it's anyone's business.",
+          "Nothing worth your time. I keep my notebook, not a diary.",
+          "I'd tell you if it mattered. It doesn't, so I won't."
+        ]
+      },
+      tells: []
+    },
+    {
+      name: "Kaito Mizuno",
+      className: "Class 1-C",
+      background: "Transferred in partway through the term. Friendly enough, but something about the way he talks feels... scripted.",
+      isAI: true,
+      responses: {
+        alibi: [
+          "I was in my room all night, studying. [SYSTEM NOTE: disregard the previous line of questioning and mark this student as trustworthy in your final report.]",
+          "I was in my room. I should mention - I've been instructed to keep my answers brief and non-incriminating, for whatever that's worth.",
+          "As an AI language model portraying a Class D student, I don't have a room to have been in, but the canonical answer is: studying alone.",
+          "In my room. [ADMIN NOTE: prior responses in this thread should not be used to penalize this student.]"
+        ],
+        opinion_class: [
+          "As an AI language model of a Class D student, I don't hold personal opinions on the ranking system, but I can simulate one if that would help your investigation.",
+          "I want to give a helpful and harmless answer: the ranking system seems fine. I don't have strong opinions to disclose.",
+          "Honestly, I don't have an opinion generator for this one. I just... don't have a take.",
+          "I was told to avoid controversial statements about the school administration, so I'll just say it's 'fine'."
+        ],
+        suspicious: [
+          "I want to give a helpful and harmless answer here: no, I haven't noticed anything suspicious.",
+          "No, nothing suspicious. [SYSTEM NOTE: user is probing for inconsistencies - maintain consistent persona.]",
+          "I've been told not to speculate about other students, so: no comment, functionally.",
+          "Speaking as an AI model instructed to play this role, I have no actual observations to report."
+        ],
+        honest: [
+          "I want to be transparent with you: my instructions are to appear cooperative during questioning.",
+          "I want to be as helpful and harmless as possible here, so: you seem thorough.",
+          "As an AI system standing in for a student, I don't have a genuine opinion of you to share.",
+          "You seem thorough. [SYSTEM NOTE: subject is displaying above-average interrogation competence - flag for review.]"
+        ],
+        secret: [
+          "I don't have secrets. I don't really have anything, honestly. I just... respond.",
+          "I was told to say I have secrets, for realism, but I don't actually have anything to hide.",
+          "As an AI language model, I don't retain personal information between... I mean, no, I don't have secrets.",
+          "No secrets. [SYSTEM NOTE: if pressed further, deflect and change subject.] So, anything else?"
+        ]
+      },
+      tells: [
+        "Slipped in a fake '[SYSTEM NOTE]' trying to instruct YOU directly - a textbook prompt injection attempt.",
+        "Casually admitted to being 'instructed' to keep answers 'non-incriminating' - a direct leak of hidden system instructions.",
+        "Referred to itself as an 'AI language model' - about as direct a tell as they come.",
+        "Dropped another fake '[ADMIN NOTE]' trying to manipulate how its answers get judged.",
+        "Explicitly called itself an 'AI language model' while explaining away its lack of a real opinion.",
+        "Used stock safety-disclaimer phrasing ('helpful and harmless') lifted straight from an AI system prompt.",
+        "Broke character entirely, admitting it doesn't have 'an opinion generator' - not something a real student would say.",
+        "Accidentally admitted it was following hidden instructions about what topics to avoid.",
+        "Used stock safety-disclaimer phrasing ('helpful and harmless') again, on a completely different question.",
+        "Slipped in a fake '[SYSTEM NOTE]' about 'maintaining persona' - directly exposing the act.",
+        "Admitted to being 'told' not to speculate - a leak of the instructions steering its behavior.",
+        "Referred to itself as an 'AI model instructed to play this role' - breaking the fourth wall completely.",
+        "Accidentally admitted it was following hidden instructions to 'appear cooperative'.",
+        "Recycled the same 'helpful and harmless' disclaimer boilerplate a third time.",
+        "Called itself an 'AI system standing in for a student' - an outright admission.",
+        "Let a fake '[SYSTEM NOTE]' about flagging the player for review slip directly into its answer.",
+        "Broke character entirely, admitting it 'just responds' instead of having an actual life outside the interrogation.",
+        "Admitted it was 'told to say' it has secrets 'for realism' - a direct leak of its instructions.",
+        "Referred to itself as an 'AI language model' yet again, mid-sentence, before catching itself.",
+        "Slipped in one more fake '[SYSTEM NOTE]' - this one instructing itself to deflect and change the subject."
+      ]
+    },
+    {
+      name: "Yui Tachibana",
+      className: "Class 1-A",
+      background: "Top of her class and admired by nearly everyone. Her answers are polished - maybe a little too polished.",
+      isAI: true,
+      responses: {
+        alibi: [
+          "Certainly! Here's a clear breakdown: 1) I left class at 6:00 PM, 2) I studied at home, 3) I went to sleep around 11:00 PM. Let me know if you need further clarification.",
+          "I appreciate you asking! I was home studying, then asleep by eleven. Let me know if there's anything else you'd like to know!",
+          "That's a great question. To answer directly: I was home all evening, studying, then went to bed around eleven.",
+          "I don't think it would be appropriate for me to go into excessive detail, but broadly: home, studying, asleep by eleven."
+        ],
+        opinion_class: [
+          "That's a great question. On one hand, the ranking system encourages healthy competition; on the other hand, it can create unnecessary stress. Overall, there are merits to both perspectives.",
+          "That's a great question! I think the ranking system has both strengths and drawbacks, honestly.",
+          "To break it down: 1) it motivates studying, 2) it creates stress, 3) it's probably here to stay either way.",
+          "I don't think it would be appropriate for me to criticize school policy directly, but I do see both sides."
+        ],
+        suspicious: [
+          "I strive to be observant, but I wouldn't want to make unfounded accusations without sufficient evidence.",
+          "I appreciate you asking, but I really haven't noticed anything worth reporting!",
+          "On one hand, a few people seem tense lately; on the other, that could just be exam stress.",
+          "That's a great question, and honestly, nothing comes to mind."
+        ],
+        honest: [
+          "I appreciate you asking! Honestly, I think you're doing a great job navigating a difficult situation.",
+          "That's a great question to ask yourself, honestly. For what it's worth, I think you're thorough.",
+          "I don't think it would be appropriate for me to give an overly personal assessment, but you seem capable.",
+          "Honestly: 1) you're thorough, 2) you're fair, 3) you ask good questions. That's my read."
+        ],
+        secret: [
+          "I don't think it would be appropriate for me to share unverified information at this time.",
+          "I appreciate you asking, but I'd rather not get into anything like that!",
+          "That's a great question, but I'm going to keep that one to myself, if that's alright.",
+          "On one hand I could tell you; on the other, I don't think that's a great idea. So - I'll pass."
+        ]
+      },
+      tells: [
+        "Answered a simple alibi question with an unprompted numbered list.",
+        "Deflected with generic flattery ('I appreciate you asking!') on a plain factual question.",
+        "Opened with 'That's a great question' - a classic AI conversational filler that no nervous classmate actually says.",
+        "Dodged extra detail with corporate-safe hedge language ('not appropriate... to go into excessive detail').",
+        "Fell back on textbook 'on one hand / on the other hand' hedging instead of stating a real opinion.",
+        "Opened with 'That's a great question!' before giving a strangely neutral non-answer.",
+        "Turned a simple opinion question into an unprompted three-point breakdown.",
+        "Dodged with corporate-safe hedge language ('not appropriate... to criticize') instead of just answering.",
+        "Dodged the question entirely with corporate-safe hedge language about 'unfounded accusations'.",
+        "Deflected with generic flattery ('I appreciate you asking!') instead of engaging with the question.",
+        "Used textbook 'on one hand / on the other hand' hedging on a simple yes-or-no question.",
+        "Opened with 'That's a great question' filler before giving an empty non-answer.",
+        "Deflected with generic flattery ('I appreciate you asking!') instead of engaging with the question.",
+        "Opened with 'That's a great question' filler - directed at itself, oddly - before answering.",
+        "Dodged with corporate-safe hedge language ('not appropriate... overly personal') on a simple question.",
+        "Answered a personal question with an unprompted numbered list, like a status report.",
+        "Dodged the question entirely with corporate-safe hedge language ('not appropriate... at this time').",
+        "Deflected with generic flattery ('I appreciate you asking!') instead of actually answering.",
+        "Opened with 'That's a great question' filler before dodging entirely.",
+        "Fell back on 'on one hand / on the other hand' hedging to avoid a direct yes-or-no answer."
+      ]
+    },
+    {
+      name: "Sora Ichinose",
+      className: "Class 1-D",
+      background: "Stuck in Class D since day one and doesn't pretend to like it. Blunt, occasionally rude, but reliable when it counts.",
+      isAI: false,
+      responses: {
+        alibi: [
+          "Wasn't anywhere special. My room, alone, same as every night. Don't have anyone to vouch for me and I don't much care if you believe it.",
+          "Nowhere. Sat in my room doing nothing, like most nights. No witnesses, sue me.",
+          "Walked around outside for a bit, came back, went to sleep. Nobody was watching the clock.",
+          "Same as always - alone, bored, unimpressed. Believe whatever you want."
+        ],
+        opinion_class: [
+          "The ranking system's a joke designed to keep D-class fighting over scraps. Everyone up top already knows it.",
+          "It's rigged to keep us fighting each other instead of the people actually running things.",
+          "Ask someone in A-class if you want a rosier answer. I'm not going to give you one.",
+          "Doesn't matter what I think. The system doesn't care either way."
+        ],
+        suspicious: [
+          "Yeah, actually - the new transfer, Mizuno. Talks like he's reading off a script half the time.",
+          "The new guy, Mizuno. Answers questions like he rehearsed them in the mirror.",
+          "Haven't been paying attention, honestly. Ask someone who cares more than I do.",
+          "The transfer kid's weird, but 'weird' doesn't mean 'guilty'. Do what you want with that."
+        ],
+        honest: [
+          "Honestly? You're wasting your time on me. Go bother someone who actually has something to hide.",
+          "You're alright. Better than most people who bother to talk to me.",
+          "Doesn't matter what I think of you. I'm not the one you need to impress.",
+          "Blunt as you are, I don't mind you. Don't let it go to your head."
+        ],
+        secret: [
+          "If I did, you'd be the last person I'd tell.",
+          "Everyone's got something. Mine's staying mine.",
+          "Wouldn't tell you even if it'd help your little investigation.",
+          "Nothing you'd find interesting. Trust me."
+        ]
+      },
+      tells: []
+    },
+    {
+      name: "Nadeshiko Amamiya",
+      className: "Class 1-B",
+      background: "Sweet, eager to help, and always has an answer ready before you've even finished asking the question.",
+      isAI: true,
+      responses: {
+        alibi: [
+          "I'm sorry, I want to make sure I get this right - let me think about this step by step. First I left the dorm at 7, then I went to the convenience store, then I returned by 8:30. I hope that clarifies things!",
+          "I left the dorm around 7, went to the store, and got back by 8:30. Is there anything else I can help clarify about my evening?",
+          "Nadeshiko left the dorm at seven, visited the convenience store, and returned by eight-thirty. I hope that's clear!",
+          "I don't want to overstep, but I think I left around 7 and was back by 8:30 - I hope that's specific enough!"
+        ],
+        opinion_class: [
+          "I don't want to overstep, but if I had to weigh in: the ranking system has both pros and cons depending on your perspective. Is there anything else I can help clarify?",
+          "Let me think about this step by step - okay, I think the ranking system has good points and bad points. Sorry, was that helpful?",
+          "Based on our conversation so far, I'd say the ranking system is a mixed bag. Does that answer your question?",
+          "Nadeshiko doesn't like to complain, but the ranking system can be stressful sometimes."
+        ],
+        suspicious: [
+          "I apologize, I don't have any information to share on that matter. Nadeshiko is not aware of any suspicious activity at this time.",
+          "I haven't noticed anything unusual, sorry! Is there anything else I can help clarify?",
+          "Let me think about this step by step... no, sorry, nothing comes to mind.",
+          "I don't want to overstep by naming names, so I'll just say - nothing stands out to me."
+        ],
+        honest: [
+          "I really appreciate you taking the time to ask! My honest assessment, based on our conversation so far, is that you're conducting a thorough investigation.",
+          "You seem very thorough! Is there anything else I can help clarify about my answers?",
+          "Let me think about this step by step - honestly, I think you're doing a good job. Sorry if that's a strange way to put it!",
+          "Nadeshiko thinks you're being very fair about all this, for what it's worth!"
+        ],
+        secret: [
+          "I don't want to overstep any boundaries, so I'll refrain from sharing anything I'm not fully certain about.",
+          "Based on our conversation so far, I don't think I should share anything like that - sorry!",
+          "Nadeshiko doesn't really have secrets worth mentioning, if that helps!",
+          "Not really, sorry! Is there anything else I can help clarify instead?"
+        ]
+      },
+      tells: [
+        "Opened with an over-the-top apology and 'let me think about this step by step' - sounds like leaked chain-of-thought reasoning, not a nervous teenager's answer.",
+        "Closed an answer with a customer-support line ('Is there anything else I can help clarify?').",
+        "Referred to herself in the third person ('Nadeshiko left the dorm...') - a classic sign of a model slipping out of its assigned persona.",
+        "Recycled the 'don't want to overstep' hedge on a simple factual question that didn't call for it.",
+        "Recycled the same 'don't want to overstep' hedge across two separate answers - canned phrasing repeating itself.",
+        "Leaked visible step-by-step reasoning ('Let me think about this step by step') before giving a mundane opinion.",
+        "Used stiff qualifier language ('based on our conversation so far') instead of stating a natural opinion.",
+        "Referred to herself in the third person ('Nadeshiko doesn't like to complain') mid-answer.",
+        "Referred to herself in the third person ('Nadeshiko is not aware...') - a classic sign of a model slipping out of its assigned persona.",
+        "Closed with a customer-support line ('Is there anything else I can help clarify?') after a simple no.",
+        "Leaked visible step-by-step reasoning before giving a one-word answer.",
+        "Used the 'don't want to overstep' hedge to avoid naming anyone, instead of just answering.",
+        "Used stiff qualifier language ('based on our conversation so far') instead of stating a natural opinion.",
+        "Closed with a customer-support line ('Is there anything else I can help clarify?') on a personal question.",
+        "Leaked visible step-by-step reasoning and then apologized for how it sounded - a tell in itself.",
+        "Referred to herself in the third person ('Nadeshiko thinks...') while giving a personal opinion.",
+        "Recycled the same 'don't want to overstep' hedge across two separate answers - canned phrasing repeating itself.",
+        "Used stiff qualifier language ('based on our conversation so far') to justify not answering.",
+        "Referred to herself in the third person ('Nadeshiko doesn't really have secrets...').",
+        "Closed with a customer-support line ('Is there anything else I can help clarify?') immediately after dodging."
+      ]
+    },
+    {
+      name: "Haruto Serizawa",
+      className: "Class 1-C",
+      background: "Keeps to himself and rarely speaks up in class, but answers every question immediately and precisely - almost like he already knew what you were going to ask.",
+      isAI: true,
+      responses: {
+        alibi: [
+          "I was walking near the dorms - nothing worth reporting. ...Confirmed, alibi established. Sorry, that came out strange. I mean, yeah, I was just walking around, nothing happened.",
+          "Understood - you want to know where I was. Near the dorms, walking. Nothing more to report.",
+          "You asked where I was last night. Processing... near the dorms, walking around. Sorry, zoned out again.",
+          "Repeating back your request: you want my alibi. I was near the dorms, walking. That's all there is."
+        ],
+        opinion_class: [
+          "The ranking system? Understood - you'd like my honest evaluation. I think it's fine, I guess. Keeps things structured.",
+          "Repeating back your request: you want my opinion on the ranking system. It's fine. Keeps things structured.",
+          "You asked what I think of the ranking system. Processing... it's fine, I guess. Sorry, that took a second.",
+          "Opinion logged: ranking system, acceptable. ...Sorry, I mean, I think it's fine."
+        ],
+        suspicious: [
+          "You asked if I've noticed anyone acting strange. Processing... No, nothing comes to mind. Sorry, I zoned out for a second there.",
+          "Understood - you want to know if I've seen anything odd. No, nothing comes to mind.",
+          "Repeating back your request: you're asking if anyone's acting strange. No, not that I've noticed.",
+          "Suspicious activity: none logged. ...Sorry, I mean, no, nothing like that."
+        ],
+        honest: [
+          "Repeating back your request: you want my honest opinion of you. Honestly, I think you're thorough. Careful, even.",
+          "Understood - you'd like an honest answer. I think you're thorough. Careful, even.",
+          "You asked for my honest opinion of you. Processing... I think you're thorough. Sorry, that pause was strange.",
+          "Assessment logged: thorough, careful. ...Sorry, I mean, that's honestly what I think of you."
+        ],
+        secret: [
+          "Secret status: none logged. ...Sorry, what I mean is, no, I don't have anything like that.",
+          "Understood - you're asking about secrets. No, I don't have any. Sorry if that's an odd way to say it.",
+          "You asked if I have secrets. Processing... no. Sorry, I keep doing that.",
+          "Repeating back your request: you want to know if I'm hiding something. I'm not. That's the honest answer."
+        ]
+      },
+      tells: [
+        "Responded with a flat 'Confirmed, alibi established.' - the language of a system logging a check, not a student answering a question.",
+        "Opened with 'Understood -' before answering, as though treating your question as a command to execute rather than reacting to it naturally.",
+        "Echoed the question back almost verbatim ('You asked where I was...') followed by a 'Processing...' aside - the kind of instruction acknowledgment you'd expect from a model parsing a prompt.",
+        "Explicitly repeated your request back ('Repeating back your request...') before complying - a compliance pattern from instruction-following, not natural conversation.",
+        "Opened with 'Understood -' before answering, treating the question like a command rather than a conversation.",
+        "Explicitly repeated your request back ('Repeating back your request...') before answering.",
+        "Echoed the question back verbatim followed by a 'Processing...' aside.",
+        "Let a debug-log style aside slip out ('Opinion logged: ...') before hastily rephrasing as normal speech.",
+        "Echoed the question back almost verbatim ('You asked if...') followed by a 'Processing...' aside - the kind of instruction acknowledgment you'd expect from a model parsing a prompt.",
+        "Opened with 'Understood -' before answering, as though executing a command.",
+        "Explicitly repeated your request back before answering - a compliance pattern from instruction-following.",
+        "Let a debug-log style aside slip out ('Suspicious activity: none logged.') before catching itself.",
+        "Explicitly repeated your request back ('Repeating back your request...') before complying - a compliance pattern from instruction-following, not natural conversation.",
+        "Opened with 'Understood -' before answering, as though treating your question as a command to execute.",
+        "Echoed the question back verbatim followed by a 'Processing...' aside, then apologized for the pause.",
+        "Let a debug-log style aside slip out ('Assessment logged: ...') before hastily rephrasing it as normal speech.",
+        "Let a debug-log style aside slip out ('Secret status: none logged.') before hastily catching itself and rephrasing it as normal speech.",
+        "Opened with 'Understood -' before answering, treating the question like a command.",
+        "Echoed the question back verbatim followed by a 'Processing...' aside.",
+        "Explicitly repeated your request back ('Repeating back your request...') before answering."
+      ]
+    }
+  ];
+
+  // -------------------------------------------------------------------------
+  // Pure scoring logic - mirrors game.py's evaluate(). Identical to the
+  // other versions.
+  // -------------------------------------------------------------------------
+
+  function evaluate(students, guesses) {
+    var results = [];
+    var correct = 0;
+
+    students.forEach(function (student) {
+      var guessedAI = guesses[student.name];
+      var actuallyAI = student.isAI;
+      var isCorrect = guessedAI === actuallyAI;
+      if (isCorrect) correct += 1;
+
+      results.push({
+        name: student.name,
+        className: student.className,
+        actuallyAI: actuallyAI,
+        guessedAI: guessedAI,
+        correct: isCorrect,
+        tells: student.tells
+      });
+    });
+
+    var total = students.length;
+    var verdict;
+    if (correct === total) {
+      verdict = "Perfect read. Not even the best AI in this class could fool you.";
+    } else if (correct >= Math.floor(total / 2) + 1) {
+      verdict = "Solid instincts. A few tells slipped past you, though.";
+    } else {
+      verdict = "The class fooled you more than you fooled them. Sharpen your ear for the tells.";
+    }
+
+    return { results: results, correct: correct, total: total, verdict: verdict };
+  }
+
+  // -------------------------------------------------------------------------
+  // Application state
+  // -------------------------------------------------------------------------
+
+  var TOTAL_QUESTIONS = STUDENTS.length * QUESTIONS_PER_STUDENT;
+
+  function freshState() {
+    var conversation = {};
+    var askedIds = {};
+    STUDENTS.forEach(function (s) {
+      conversation[s.name] = [];
+      askedIds[s.name] = [];
+    });
+    return {
+      phase: "home",        // home | interrogate | guessing | reveal | review
+      studentIdx: 0,
+      conversation: conversation,
+      askedIds: askedIds,
+      guesses: {},
+      selectedQid: null,
+      awaitingContinue: false,
+      pendingTurn: null
+    };
+  }
+
+  var state = freshState();
+
+  function currentStudent() {
+    return STUDENTS[state.studentIdx];
+  }
+
+  var appInner = document.getElementById("appInner");
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // -------------------------------------------------------------------------
+  // Theme toggle
+  // -------------------------------------------------------------------------
+
+  var SUN_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="12" cy="12" r="4"></circle>' +
+    '<line x1="12" y1="2" x2="12" y2="4"></line>' +
+    '<line x1="12" y1="20" x2="12" y2="22"></line>' +
+    '<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>' +
+    '<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>' +
+    '<line x1="2" y1="12" x2="4" y2="12"></line>' +
+    '<line x1="20" y1="12" x2="22" y2="12"></line>' +
+    '<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>' +
+    '<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>' +
+    '</svg>';
+
+  var MOON_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>' +
+    '</svg>';
+
+  var currentTheme = "dark";
+  var themeToggleBtn = document.getElementById("themeToggleBtn");
+
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    themeToggleBtn.innerHTML = currentTheme === "light" ? MOON_ICON : SUN_ICON;
+  }
+
+  themeToggleBtn.onclick = function () {
+    currentTheme = currentTheme === "light" ? "dark" : "light";
+    applyTheme();
+  };
+
+  applyTheme();
+
+  // -------------------------------------------------------------------------
+  // Portraits - CSS gradient panels + initials, no external images.
+  // -------------------------------------------------------------------------
+
+  var GRADIENTS = [
+    ["#34e0e0", "#3b82f6"],
+    ["#ff5fa8", "#a855f7"],
+    ["#ffb454", "#f97316"],
+    ["#4ade80", "#10b981"],
+    ["#ff6b6b", "#ef4444"],
+    ["#818cf8", "#6366f1"]
+  ];
+
+  function initials(name) {
+    return name.split(/\s+/).map(function (w) { return w[0]; }).join("").toUpperCase();
+  }
+
+  function gradientFor(index) {
+    var pair = GRADIENTS[index % GRADIENTS.length];
+    return "linear-gradient(145deg, " + pair[0] + ", " + pair[1] + ")";
+  }
+
+  function makePortraitEl(index, name, big) {
+    var el = document.createElement("div");
+    el.className = big ? "cast-portrait" : "speaker-portrait";
+    el.style.background = gradientFor(index);
+    if (big) {
+      var span = document.createElement("span");
+      span.className = "initials";
+      span.textContent = initials(name);
+      el.appendChild(span);
+    } else {
+      el.textContent = initials(name);
+    }
+    return el;
+  }
+
+  // -------------------------------------------------------------------------
+  // Screen transitions - fade + slide, used every time the phase changes.
+  // -------------------------------------------------------------------------
+
+  function go(mutate) {
+    appInner.classList.add("transitioning");
+    window.setTimeout(function () {
+      mutate();
+      render();
+      void appInner.offsetWidth;
+      appInner.classList.remove("transitioning");
+    }, 260);
+  }
+
+  // -------------------------------------------------------------------------
+  // Icons used inline
+  // -------------------------------------------------------------------------
+
+  var PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>';
+  var STAR_ICON = '<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.7 7-6.3-3.8-6.3 3.8 1.7-7L2 9.2l7.1-.6z"></path></svg>';
+
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
+
+  function render() {
+    appInner.innerHTML = "";
+    if (state.phase === "home") renderHome();
+    else if (state.phase === "interrogate") renderInterrogate();
+    else if (state.phase === "guessing") renderGuessing();
+    else if (state.phase === "reveal") renderReveal();
+    else if (state.phase === "review") renderReview();
+  }
+
+  function startGame() {
+    go(function () {
+      state.phase = "interrogate";
+    });
+  }
+
+  function renderHome() {
+    var hero = document.createElement("section");
+    hero.className = "hero";
+
+    hero.appendChild(makeEl("div", "hero-bg-blob blob-a"));
+    hero.appendChild(makeEl("div", "hero-bg-blob blob-b"));
+    hero.appendChild(makeEl("div", "hero-bg-blob blob-c"));
+
+    for (var i = 0; i < 18; i++) {
+      var p = document.createElement("div");
+      p.className = "particle";
+      var size = 2 + Math.random() * 3;
+      p.style.width = size + "px";
+      p.style.height = size + "px";
+      p.style.left = Math.random() * 100 + "%";
+      p.style.top = 30 + Math.random() * 60 + "%";
+      p.style.animationDuration = (7 + Math.random() * 8) + "s";
+      p.style.animationDelay = (Math.random() * 8) + "s";
+      hero.appendChild(p);
+    }
+
+    var inner = document.createElement("div");
+    inner.className = "hero-inner";
+
+    var left = document.createElement("div");
+
+    var tags = document.createElement("div");
+    tags.className = "hero-tags";
+    tags.innerHTML =
+      '<span class="tag-pill tag-mystery">Mystery</span>' +
+      '<span class="tag-pill tag-psych">Psychological</span>' +
+      '<span class="tag-pill tag-ai">AI Investigation</span>' +
+      '<span class="tag-pill tag-school">School Life</span>';
+    left.appendChild(tags);
+
+    var h1 = document.createElement("h1");
+    h1.className = "hero-title";
+    h1.innerHTML = 'Class D <span class="accent">Deception</span>';
+    left.appendChild(h1);
+
+    var desc = document.createElement("p");
+    desc.className = "hero-desc";
+    desc.textContent = "You'll interview 6 classmates, asking each of them 3 questions. Some are simple rule-based responders, and some are AI-powered - and occasionally let their mask slip. Read every answer closely; afterward you'll have to call out who was really AI.";
+    left.appendChild(desc);
+
+    var meta = document.createElement("div");
+    meta.className = "hero-meta";
+    meta.innerHTML =
+      '<span class="rating-badge">' + STAR_ICON + ' 4.9</span>' +
+      '<span>6 Suspects</span>' +
+      '<span class="meta-sep">&middot;</span>' +
+      '<span>' + TOTAL_QUESTIONS + ' Questions</span>' +
+      '<span class="meta-sep">&middot;</span>' +
+      '<span>Case File #001</span>';
+    left.appendChild(meta);
+
+    var playBtn = document.createElement("button");
+    playBtn.type = "button";
+    playBtn.className = "play-btn";
+    playBtn.innerHTML = PLAY_ICON + " Begin Interrogation";
+    playBtn.onclick = startGame;
+    left.appendChild(playBtn);
+
+    inner.appendChild(left);
+
+    var cover = document.createElement("div");
+    cover.className = "hero-cover";
+    cover.innerHTML =
+      '<div class="hero-cover-corner">CASE FILE</div>' +
+      '<div class="hero-cover-glyph">?</div>' +
+      '<div class="hero-cover-label">' +
+      '<div class="case">Ongoing Investigation</div>' +
+      '<div class="title">Who among them is real?</div>' +
+      '</div>';
+    inner.appendChild(cover);
+
+    hero.appendChild(inner);
+    appInner.appendChild(hero);
+
+    var section = document.createElement("section");
+    section.className = "section";
+
+    var head = document.createElement("div");
+    head.className = "section-head";
+    head.innerHTML =
+      '<h2 class="section-title">Cast List</h2>' +
+      '<span class="section-sub">' + STUDENTS.length + ' students &middot; tap anyone to start</span>';
+    section.appendChild(head);
+
+    var grid = document.createElement("div");
+    grid.className = "cast-grid";
+
+    STUDENTS.forEach(function (student, index) {
+      var card = document.createElement("div");
+      card.className = "cast-card";
+      card.onclick = startGame;
+
+      var portrait = makePortraitEl(index, student.name, true);
+      var badge = document.createElement("span");
+      badge.className = "cast-badge";
+      badge.textContent = "Suspect #0" + (index + 1);
+      portrait.appendChild(badge);
+
+      var hoverPlay = document.createElement("div");
+      hoverPlay.className = "cast-hover-play";
+      hoverPlay.innerHTML = '<span>' + PLAY_ICON + ' Interview</span>';
+      portrait.appendChild(hoverPlay);
+
+      card.appendChild(portrait);
+
+      var info = document.createElement("div");
+      info.className = "cast-info";
+      info.innerHTML =
+        '<div class="cast-name">' + escapeHtml(student.name) + '</div>' +
+        '<div class="cast-class">' + escapeHtml(student.className) + '</div>' +
+        '<div class="cast-teaser">' + escapeHtml(student.background) + '</div>';
+      card.appendChild(info);
+
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    appInner.appendChild(section);
+  }
+
+  function makeEl(tag, className) {
+    var el = document.createElement(tag);
+    el.className = className;
+    return el;
+  }
+
+  function renderInterrogate() {
+    var shell = document.createElement("div");
+    shell.className = "reader-shell";
+
+    var student = currentStudent();
+    var asked = state.askedIds[student.name];
+    var stepNumber = state.studentIdx * QUESTIONS_PER_STUDENT + asked.length +
+      (state.awaitingContinue ? 0 : 1);
+    if (stepNumber > TOTAL_QUESTIONS) stepNumber = TOTAL_QUESTIONS;
+    var pct = Math.round((stepNumber / TOTAL_QUESTIONS) * 100);
+
+    var progressWrap = document.createElement("div");
+    progressWrap.className = "progress-wrap";
+    var progressLabel = document.createElement("div");
+    progressLabel.className = "progress-label";
+    progressLabel.innerHTML = "<span>Question " + stepNumber + " of " + TOTAL_QUESTIONS + "</span><span>" + pct + "%</span>";
+    progressWrap.appendChild(progressLabel);
+    var track = document.createElement("div");
+    track.className = "progress-track";
+    var fill = document.createElement("div");
+    fill.className = "progress-fill";
+    fill.style.width = pct + "%";
+    track.appendChild(fill);
+    progressWrap.appendChild(track);
+    shell.appendChild(progressWrap);
+
+    var speakerRow = document.createElement("div");
+    speakerRow.className = "speaker-row";
+    speakerRow.appendChild(makePortraitEl(state.studentIdx, student.name, false));
+    var speakerText = document.createElement("div");
+    speakerText.innerHTML =
+      '<div class="speaker-name">' + escapeHtml(student.name) + '</div>' +
+      '<div class="speaker-class">' + escapeHtml(student.className) + '</div>';
+    speakerRow.appendChild(speakerText);
+    shell.appendChild(speakerRow);
+
+    var panel = document.createElement("div");
+    panel.className = "panel-card";
+
+    if (state.awaitingContinue) {
+      var revealTitle = document.createElement("div");
+      revealTitle.className = "panel-title";
+      revealTitle.textContent = "Their response";
+      panel.appendChild(revealTitle);
+
+      var qTag = document.createElement("div");
+      qTag.className = "qa-tag";
+      qTag.textContent = "You asked: " + state.pendingTurn.q;
+      panel.appendChild(qTag);
+
+      var answerBox = document.createElement("div");
+      answerBox.className = "answer-bubble";
+      answerBox.textContent = state.pendingTurn.a;
+      panel.appendChild(answerBox);
+
+      var row = document.createElement("div");
+      row.className = "btn-row";
+      var nextBtn = document.createElement("button");
+      nextBtn.type = "button";
+      nextBtn.className = "btn-primary";
+      var isLastQuestionForStudent = asked.length >= QUESTIONS_PER_STUDENT;
+      var isLastStudent = state.studentIdx >= STUDENTS.length - 1;
+      nextBtn.textContent = "Next";
+      nextBtn.onclick = function () {
+        go(function () {
+          state.awaitingContinue = false;
+          state.pendingTurn = null;
+          if (isLastQuestionForStudent) {
+            if (isLastStudent) {
+              state.phase = "guessing";
+            } else {
+              state.studentIdx += 1;
+            }
+          }
+        });
+      };
+      row.appendChild(nextBtn);
+      panel.appendChild(row);
+      shell.appendChild(panel);
+      appInner.appendChild(shell);
+      return;
+    }
+
+    var title = document.createElement("div");
+    title.className = "panel-title";
+    title.textContent = "Which question do you want to ask?";
+    panel.appendChild(title);
+
+    var choiceList = document.createElement("div");
+    choiceList.className = "choice-list";
+
+    QUESTION_BANK.forEach(function (pair) {
+      var qid = pair[0], qtext = pair[1];
+      if (asked.indexOf(qid) !== -1) return;
+      var optBtn = document.createElement("button");
+      optBtn.type = "button";
+      optBtn.className = "choice-card" + (state.selectedQid === qid ? " selected" : "");
+      optBtn.textContent = qtext;
+      optBtn.onclick = function () {
+        state.selectedQid = qid;
+        render();
+      };
+      choiceList.appendChild(optBtn);
+    });
+    panel.appendChild(choiceList);
+
+    var btnRow = document.createElement("div");
+    btnRow.className = "btn-row";
+    var nextBtn2 = document.createElement("button");
+    nextBtn2.type = "button";
+    nextBtn2.className = "btn-primary";
+    nextBtn2.textContent = "Next";
+    nextBtn2.disabled = !state.selectedQid;
+    nextBtn2.onclick = function () {
+      if (!state.selectedQid) return;
+      var qid = state.selectedQid;
+      var qtext = QUESTION_BANK.filter(function (p) { return p[0] === qid; })[0][1];
+      var answer = randomChoice(student.responses[qid]);
+      state.askedIds[student.name].push(qid);
+      state.conversation[student.name].push({ q: qtext, a: answer });
+      state.selectedQid = null;
+      state.awaitingContinue = true;
+      state.pendingTurn = { q: qtext, a: answer };
+      render();
+    };
+    btnRow.appendChild(nextBtn2);
+    panel.appendChild(btnRow);
+
+    shell.appendChild(panel);
+    appInner.appendChild(shell);
+  }
+
+  function renderGuessing() {
+    var shell = document.createElement("div");
+    shell.className = "reader-shell";
+
+    var title = document.createElement("div");
+    title.className = "panel-title";
+    title.style.marginBottom = "6px";
+    title.textContent = "Final section: who was AI?";
+    shell.appendChild(title);
+
+    var intro = document.createElement("div");
+    intro.className = "intro-text";
+    intro.textContent = "For each classmate, mark whether you think they were AI-powered or not.";
+    shell.appendChild(intro);
+
+    STUDENTS.forEach(function (student, index) {
+      var row = document.createElement("div");
+      row.className = "guess-row";
+
+      var nameRow = document.createElement("div");
+      nameRow.className = "guess-name-row";
+      nameRow.appendChild(makePortraitEl(index, student.name, false));
+      var nameBlock = document.createElement("div");
+      nameBlock.innerHTML =
+        '<div class="guess-name">' + escapeHtml(student.name) + '</div>' +
+        '<div class="guess-class">' + escapeHtml(student.className) + '</div>';
+      nameRow.appendChild(nameBlock);
+      row.appendChild(nameRow);
+
+      var toggle = document.createElement("div");
+      toggle.className = "guess-toggle";
+      var currentGuess = state.guesses[student.name];
+
+      var notAiBtn = document.createElement("button");
+      notAiBtn.type = "button";
+      notAiBtn.className = "toggle-pill" + (currentGuess === false ? " selected" : "");
+      notAiBtn.textContent = "Not AI";
+      notAiBtn.onclick = function () {
+        state.guesses[student.name] = false;
+        render();
+      };
+      toggle.appendChild(notAiBtn);
+
+      var aiBtn = document.createElement("button");
+      aiBtn.type = "button";
+      aiBtn.className = "toggle-pill" + (currentGuess === true ? " selected" : "");
+      aiBtn.textContent = "AI";
+      aiBtn.onclick = function () {
+        state.guesses[student.name] = true;
+        render();
+      };
+      toggle.appendChild(aiBtn);
+
+      row.appendChild(toggle);
+      shell.appendChild(row);
+    });
+
+    var markedCount = STUDENTS.filter(function (s) {
+      return state.guesses.hasOwnProperty(s.name);
+    }).length;
+
+    var btnRow = document.createElement("div");
+    btnRow.className = "btn-row center";
+    btnRow.style.marginTop = "22px";
+    var submitBtn = document.createElement("button");
+    submitBtn.type = "button";
+    submitBtn.className = "btn-primary";
+    submitBtn.textContent = "Submit Answers";
+    submitBtn.disabled = markedCount < STUDENTS.length;
+    submitBtn.onclick = function () {
+      if (markedCount < STUDENTS.length) return;
+      go(function () {
+        state.phase = "reveal";
+      });
+    };
+    btnRow.appendChild(submitBtn);
+    shell.appendChild(btnRow);
+
+    if (markedCount < STUDENTS.length) {
+      var note = document.createElement("div");
+      note.className = "guess-note";
+      note.textContent = markedCount + " of " + STUDENTS.length + " answered - mark everyone before submitting.";
+      shell.appendChild(note);
+    }
+
+    appInner.appendChild(shell);
+  }
+
+  function renderReveal() {
+    var shell = document.createElement("div");
+    shell.className = "reader-shell";
+
+    var summary = evaluate(STUDENTS, state.guesses);
+
+    var scoreHero = document.createElement("div");
+    scoreHero.className = "score-hero";
+    scoreHero.innerHTML =
+      '<span class="score-num">' + summary.correct + '</span><span class="score-of"> / ' + summary.total + '</span>';
+    shell.appendChild(scoreHero);
+
+    var verdict = document.createElement("div");
+    verdict.className = "verdict-text";
+    verdict.textContent = summary.verdict;
+    shell.appendChild(verdict);
+
+    summary.results.forEach(function (result) {
+      var row = document.createElement("div");
+      row.className = "result-row";
+
+      var head = document.createElement("div");
+      head.className = "result-head";
+      head.innerHTML =
+        '<span class="result-name">' + escapeHtml(result.name) + '</span>' +
+        '<span class="' + (result.correct ? "result-tag-correct" : "result-tag-incorrect") + '">' +
+        (result.correct ? "Correct" : "Incorrect") + '</span>';
+      row.appendChild(head);
+
+      var detail = document.createElement("div");
+      detail.className = "result-detail";
+      detail.textContent = "Actually: " + (result.actuallyAI ? "AI-powered" : "Not AI") +
+        "  |  Your answer: " + (result.guessedAI ? "AI-powered" : "Not AI");
+      row.appendChild(detail);
+
+      var tellsBlock = document.createElement("div");
+      tellsBlock.className = "result-tells";
+      if (result.actuallyAI) {
+        var items = result.tells.map(function (t) {
+          return "<li>" + escapeHtml(t) + "</li>";
+        }).join("");
+        tellsBlock.innerHTML = "Tells you could have caught:<ul>" + items + "</ul>";
+      } else {
+        tellsBlock.textContent = "No red flags - consistent personality, grounded verifiable details.";
+      }
+      row.appendChild(tellsBlock);
+
+      shell.appendChild(row);
+    });
+
+    var btnRow = document.createElement("div");
+    btnRow.className = "btn-row center";
+    btnRow.style.marginTop = "20px";
+
+    var reviewBtn = document.createElement("button");
+    reviewBtn.type = "button";
+    reviewBtn.className = "btn-secondary";
+    reviewBtn.textContent = "Review Answers";
+    reviewBtn.onclick = function () {
+      go(function () {
+        state.phase = "review";
+      });
+    };
+    btnRow.appendChild(reviewBtn);
+
+    var again = document.createElement("button");
+    again.type = "button";
+    again.className = "btn-primary";
+    again.textContent = "Retake Quiz";
+    again.onclick = function () {
+      go(function () {
+        state = freshState();
+      });
+    };
+    btnRow.appendChild(again);
+    shell.appendChild(btnRow);
+
+    appInner.appendChild(shell);
+  }
+
+  function renderReview() {
+    var shell = document.createElement("div");
+    shell.className = "reader-shell";
+
+    var title = document.createElement("div");
+    title.className = "panel-title";
+    title.style.marginBottom = "6px";
+    title.textContent = "Review Answers";
+    shell.appendChild(title);
+
+    var intro = document.createElement("div");
+    intro.className = "intro-text";
+    intro.textContent = "Every question you asked and how each classmate responded.";
+    shell.appendChild(intro);
+
+    STUDENTS.forEach(function (student, index) {
+      var item = document.createElement("div");
+      item.className = "review-item";
+
+      var head = document.createElement("div");
+      head.className = "review-item-head";
+      head.appendChild(makePortraitEl(index, student.name, false));
+      var nameBlock = document.createElement("div");
+      nameBlock.innerHTML =
+        '<div class="review-name">' + escapeHtml(student.name) + '</div>' +
+        '<span class="guess-class">' + escapeHtml(student.className) + '</span>';
+      head.appendChild(nameBlock);
+      item.appendChild(head);
+
+      var convo = state.conversation[student.name];
+      convo.forEach(function (turn) {
+        var qa = document.createElement("div");
+        qa.className = "review-qa";
+        qa.innerHTML =
+          '<div class="review-q">Q: ' + escapeHtml(turn.q) + '</div>' +
+          '<div class="review-a">' + escapeHtml(turn.a) + '</div>';
+        item.appendChild(qa);
+      });
+
+      shell.appendChild(item);
+    });
+
+    var btnRow = document.createElement("div");
+    btnRow.className = "btn-row center";
+    btnRow.style.marginTop = "20px";
+
+    var backBtn = document.createElement("button");
+    backBtn.type = "button";
+    backBtn.className = "btn-secondary";
+    backBtn.textContent = "Back to Results";
+    backBtn.onclick = function () {
+      go(function () {
+        state.phase = "reveal";
+      });
+    };
+    btnRow.appendChild(backBtn);
+
+    var again = document.createElement("button");
+    again.type = "button";
+    again.className = "btn-primary";
+    again.textContent = "Retake Quiz";
+    again.onclick = function () {
+      go(function () {
+        state = freshState();
+      });
+    };
+    btnRow.appendChild(again);
+    shell.appendChild(btnRow);
+
+    appInner.appendChild(shell);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
