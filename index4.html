@@ -104,7 +104,14 @@
     color: var(--text-heading);
     white-space: nowrap;
     flex: 0 0 auto;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.2s ease, transform 0.2s ease;
   }
+  .brand:hover { opacity: 0.82; transform: translateY(-1px); }
   .brand-mark {
     width: 28px;
     height: 28px;
@@ -208,7 +215,7 @@
     transform: translateY(0);
     transition: opacity 0.32s ease, transform 0.32s ease;
   }
-  #appInner.transitioning { opacity: 0; transform: translateY(16px); }
+  #appInner.transitioning { opacity: 0; transform: translateY(16px); pointer-events: none; }
 
   /* ------------------------------- Hero ------------------------------- */
   .hero {
