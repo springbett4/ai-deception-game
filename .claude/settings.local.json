@@ -2,5 +2,11 @@
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(sed -i 's/set innerHTML\\(v\\){ this._html = v; }/set innerHTML\\(v\\){ this._html = v; this.children = []; }/' /tmp/claude-1000/-mnt-c-Users-clair-0--claude-projects---type-cmd-sandbox-claude-projects-ai-deception-game/33ffdc73-1cad-4210-bce8-55cc9bd95db7/scratchpad/sim3.js)",
+      "Bash(node /tmp/claude-1000/-mnt-c-Users-clair-0--claude-projects---type-cmd-sandbox-claude-projects-ai-deception-game/33ffdc73-1cad-4210-bce8-55cc9bd95db7/scratchpad/sim3.js)"
+    ]
   }
 }
