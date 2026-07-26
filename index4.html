@@ -494,6 +494,10 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    /* Uploaded character art is a small chibi figure centered in a mostly-
+       empty classroom background, face roughly at the image's dead center -
+       scale in around that center so faces read clearly even at pfp sizes. */
+    transform: scale(2);
     z-index: 1;
   }
   .cast-portrait::after {
@@ -1528,6 +1532,7 @@
   ];
 
   var PORTRAIT_CLASS = { big: "cast-portrait", small: "speaker-portrait", mini: "mini-portrait" };
+  var IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp"];
 
   function initials(name) {
     return name.split(/\s+/).map(function (w) { return w[0]; }).join("").toUpperCase();
@@ -1562,7 +1567,10 @@
     span.textContent = initials(name);
     el.appendChild(span);
 
-    var candidates = slugVariants(name).map(function (s) { return "images/" + s + ".png"; });
+    var candidates = [];
+    slugVariants(name).forEach(function (s) {
+      IMAGE_EXTENSIONS.forEach(function (ext) { candidates.push("images/" + s + "." + ext); });
+    });
     var img = document.createElement("img");
     img.className = "portrait-img";
     img.alt = "";
@@ -1710,7 +1718,15 @@
     var layout = document.createElement("div");
     layout.className = "game-layout";
     layout.appendChild(mainEl);
-    layout.appendChild(renderSidebar());
+
+    var sidebarCol = document.createElement("div");
+    sidebarCol.className = "sidebar-col";
+    if (state.phase === "interrogate" || state.phase === "notepad") {
+      sidebarCol.appendChild(renderDescriptionBox(currentStudent(), state.studentIdx));
+    }
+    sidebarCol.appendChild(renderSidebar());
+    layout.appendChild(sidebarCol);
+
     appInner.appendChild(layout);
   }
 
