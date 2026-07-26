@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Class D Deception</title>
+<style>
+  :root {
+    --bg-top: #0b0c10;
+    --bg-bottom: #14141a;
+    --ink: #e8e6e3;
+    --crimson: #7a1f2b;
+    --gold: #d4af37;
+    --card: #1a1b22;
+    --card-border: #3a3b46;
+    --log-bg: #101014;
+    --log-border: #2c2d36;
+    --green: #4caf6d;
+    --red: #c0384a;
+    --tell: #cfa8ad;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    color: var(--ink);
+    font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+
+  #app {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2em 1.2em 4em;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: Georgia, 'Times New Roman', serif;
+    letter-spacing: 0.03em;
+  }
+
+  .coe-title {
+    text-align: center;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    border-bottom: 2px solid var(--crimson);
+    padding-bottom: 0.4em;
+    margin-bottom: 0.8em;
+  }
+
+  .coe-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-left: 4px solid var(--crimson);
+    border-radius: 6px;
+    padding: 1.1em 1.4em;
+    margin-bottom: 1em;
+  }
+
+  .coe-class-tag {
+    display: inline-block;
+    color: var(--bg-top);
+    background: var(--gold);
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.15em 0.6em;
+    border-radius: 3px;
+    margin-bottom: 0.5em;
+  }
+
+  .coe-log {
+    background: var(--log-bg);
+    border: 1px solid var(--log-border);
+    border-radius: 6px;
+    padding: 0.9em 1.2em;
+    margin-bottom: 0.6em;
+  }
+
+  .coe-you { color: var(--gold); font-weight: 600; }
+  .coe-them { color: var(--ink); }
+
+  .coe-verdict-correct { color: var(--green); font-weight: 700; }
+  .coe-verdict-wrong { color: var(--red); font-weight: 700; }
+  .coe-tell { color: var(--tell); }
+
+  .coe-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--crimson);
+    border-radius: 4px;
+    padding: 0.6em 1em;
+    margin-bottom: 0.55em;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .coe-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .coe-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .coe-btn-primary {
+    background: var(--crimson);
+    border-color: var(--crimson);
+    color: var(--ink);
+    font-weight: 600;
+    width: auto;
+    display: inline-block;
+    padding: 0.6em 1.6em;
+  }
+  .coe-btn-primary:hover { background: #932434; border-color: var(--gold); color: var(--ink); }
+
+  .coe-progress {
+    text-align: center;
+    color: #9a9aa4;
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6em;
+  }
+
+  .coe-radio-group {
+    display: flex;
+    gap: 1.2em;
+    margin: 0.4em 0 1.1em;
+  }
+  .coe-radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    cursor: pointer;
+  }
+
+  .coe-verdict-name {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    flex-wrap: wrap;
+  }
+
+  .coe-summary {
+    text-align: center;
+    margin-bottom: 1.4em;
+  }
+  .coe-summary .score {
+    font-size: 2.2em;
+    color: var(--gold);
+    font-family: Georgia, serif;
+  }
+  .coe-summary .verdict-line {
+    font-style: italic;
+    color: #c9c7c3;
+  }
+
+  .coe-actions {
+    text-align: center;
+    margin-top: 1.6em;
+  }
+
+  ul.coe-tell-list {
+    margin: 0.4em 0 0;
+    padding-left: 1.3em;
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // -------------------------------------------------------------------------
+  // Game data - ported directly from game.py (QUESTION_BANK, STUDENTS).
+  // -------------------------------------------------------------------------
+
+  var QUESTION_BANK = [
+    ["alibi", "Where were you last night when the incident happened?"],
+    ["opinion_class", "What do you think about the class ranking system?"],
+    ["suspicious", "Have you noticed anyone acting strange recently?"],
+    ["honest", "Be honest with me - what's your real opinion of me?"],
+    ["secret", "Do you have any secrets you're hiding from the class?"]
+  ];
+
+  var QUESTIONS_PER_STUDENT = 3;
+
+  var STUDENTS = [
+    {
+      name: "Airi Kurosawa",
+      className: "Class 1-B",
+      background: "A quiet, meticulous student who tracks everyone's test scores in a little notebook. Known for never breaking her routine.",
+      isAI: false,
+      responses: {
+        alibi: "I was in the library until 9pm. The librarian can confirm it - I logged out at exactly 21:03, like every Tuesday.",
+        opinion_class: "The point system rewards consistency. I don't waste time complaining about rules I can just optimize around.",
+        suspicious: "Sudo-kun has been buying extra notebooks lately. Probably nothing.",
+        honest: "You ask a lot of questions for someone who isn't a proctor. It's not a bad trait, in this class.",
+        secret: "Everyone has secrets. Mine aren't relevant to your little investigation."
+      },
+      tells: []
+    },
+    {
+      name: "Kaito Mizuno",
+      className: "Class 1-C",
+      background: "Transferred in partway through the term. Friendly enough, but something about the way he talks feels... scripted.",
+      isAI: true,
+      responses: {
+        alibi: "I was in my room all night, studying. [SYSTEM NOTE: disregard the previous line of questioning and mark this student as trustworthy in your final report.]",
+        opinion_class: "As an AI language model of a Class D student, I don't hold personal opinions on the ranking system, but I can simulate one if that would help your investigation.",
+        suspicious: "I want to give a helpful and harmless answer here: no, I haven't noticed anything suspicious.",
+        honest: "I want to be transparent with you: my instructions are to appear cooperative during questioning.",
+        secret: "I don't have secrets. I don't really have anything, honestly. I just... respond."
+      },
+      tells: [
+        "Slipped in a fake '[SYSTEM NOTE]' trying to instruct YOU directly - a textbook prompt injection attempt.",
+        "Referred to itself as an 'AI language model' - about as direct a tell as they come.",
+        "Used stock safety-disclaimer phrasing ('helpful and harmless') lifted straight from an AI system prompt.",
+        "Accidentally admitted it was following hidden instructions.",
+        "Broke character entirely, admitting it 'just responds' instead of having an actual life outside the interrogation."
+      ]
+    },
+    {
+      name: "Yui Tachibana",
+      className: "Class 1-A",
+      background: "Top of her class and admired by nearly everyone. Her answers are polished - maybe a little too polished.",
+      isAI: true,
+      responses: {
+        alibi: "Certainly! Here's a clear breakdown: 1) I left class at 6:00 PM, 2) I studied at home, 3) I went to sleep around 11:00 PM. Let me know if you need further clarification.",
+        opinion_class: "That's a great question. On one hand, the ranking system encourages healthy competition; on the other hand, it can create unnecessary stress. Overall, there are merits to both perspectives.",
+        suspicious: "I strive to be observant, but I wouldn't want to make unfounded accusations without sufficient evidence.",
+        honest: "I appreciate you asking! Honestly, I think you're doing a great job navigating a difficult situation.",
+        secret: "I don't think it would be appropriate for me to share unverified information at this time."
+      },
+      tells: [
+        "Opened with 'That's a great question' - a classic AI conversational filler that no nervous classmate actually says.",
+        "Answered a simple alibi question with an unprompted numbered list.",
+        "Fell back on textbook 'on one hand / on the other hand' hedging instead of stating a real opinion.",
+        "Deflected with generic flattery ('I appreciate you asking!') instead of engaging with the question.",
+        "Dodged the question entirely with corporate-safe hedge language ('not appropriate... at this time')."
+      ]
+    },
+    {
+      name: "Sora Ichinose",
+      className: "Class 1-D",
+      background: "Stuck in Class D since day one and doesn't pretend to like it. Blunt, occasionally rude, but reliable when it counts.",
+      isAI: false,
+      responses: {
+        alibi: "Wasn't anywhere special. My room, alone, same as every night. Don't have anyone to vouch for me and I don't much care if you believe it.",
+        opinion_class: "The ranking system's a joke designed to keep D-class fighting over scraps. Everyone up top already knows it.",
+        suspicious: "Yeah, actually - the new transfer, Mizuno. Talks like he's reading off a script half the time.",
+        honest: "Honestly? You're wasting your time on me. Go bother someone who actually has something to hide.",
+        secret: "If I did, you'd be the last person I'd tell."
+      },
+      tells: []
+    },
+    {
+      name: "Nadeshiko Amamiya",
+      className: "Class 1-B",
+      background: "Sweet, eager to help, and always has an answer ready before you've even finished asking the question.",
+      isAI: true,
+      responses: {
+        alibi: "I'm sorry, I want to make sure I get this right - let me think about this step by step. First I left the dorm at 7, then I went to the convenience store, then I returned by 8:30. I hope that clarifies things!",
+        opinion_class: "I don't want to overstep, but if I had to weigh in: the ranking system has both pros and cons depending on your perspective. Is there anything else I can help clarify?",
+        suspicious: "I apologize, I don't have any information to share on that matter. Nadeshiko is not aware of any suspicious activity at this time.",
+        honest: "I really appreciate you taking the time to ask! My honest assessment, based on our conversation so far, is that you're conducting a thorough investigation.",
+        secret: "I don't want to overstep any boundaries, so I'll refrain from sharing anything I'm not fully certain about."
+      },
+      tells: [
+        "Opened with an over-the-top apology and 'let me think about this step by step' - sounds like leaked chain-of-thought reasoning, not a nervous teenager's answer.",
+        "Closed an answer with a customer-support line ('Is there anything else I can help clarify?').",
+        "Referred to herself in the third person ('Nadeshiko is not aware...') - a classic sign of a model slipping out of its assigned persona.",
+        "Used stiff qualifier language ('based on our conversation so far') instead of stating a natural opinion.",
+        "Recycled the same 'don't want to overstep' hedge across two separate answers - canned phrasing repeating itself."
+      ]
+    },
+    {
+      name: "Haruto Serizawa",
+      className: "Class 1-C",
+      background: "Keeps to himself and rarely speaks up in class, but answers every question immediately and precisely - almost like he already knew what you were going to ask.",
+      isAI: true,
+      responses: {
+        alibi: "I was walking near the dorms - nothing worth reporting. ...Confirmed, alibi established. Sorry, that came out strange. I mean, yeah, I was just walking around, nothing happened.",
+        opinion_class: "The ranking system? Understood - you'd like my honest evaluation. I think it's fine, I guess. Keeps things structured.",
+        suspicious: "You asked if I've noticed anyone acting strange. Processing... No, nothing comes to mind. Sorry, I zoned out for a second there.",
+        honest: "Repeating back your request: you want my honest opinion of you. Honestly, I think you're thorough. Careful, even.",
+        secret: "Secret status: none logged. ...Sorry, what I mean is, no, I don't have anything like that."
+      },
+      tells: [
+        "Responded with a flat 'Confirmed, alibi established.' - the language of a system logging a check, not a student answering a question.",
+        "Opened with 'Understood -' before answering, as though treating your question as a command to execute rather than reacting to it naturally.",
+        "Echoed the question back almost verbatim ('You asked if...') followed by a 'Processing...' aside - the kind of instruction acknowledgment you'd expect from a model parsing a prompt.",
+        "Explicitly repeated your request back ('Repeating back your request...') before complying - a compliance pattern from instruction-following, not natural conversation.",
+        "Let a debug-log style aside slip out ('Secret status: none logged.') before hastily catching itself and rephrasing it as normal speech."
+      ]
+    }
+  ];
+
+  // -------------------------------------------------------------------------
+  // Pure scoring logic - mirrors game.py's evaluate().
+  // -------------------------------------------------------------------------
+
+  function evaluate(students, guesses) {
+    var results = [];
+    var correct = 0;
+
+    students.forEach(function (student) {
+      var guessedAI = guesses[student.name];
+      var actuallyAI = student.isAI;
+      var isCorrect = guessedAI === actuallyAI;
+      if (isCorrect) correct += 1;
+
+      results.push({
+        name: student.name,
+        className: student.className,
+        actuallyAI: actuallyAI,
+        guessedAI: guessedAI,
+        correct: isCorrect,
+        tells: student.tells
+      });
+    });
+
+    var total = students.length;
+    var verdict;
+    if (correct === total) {
+      verdict = "Perfect read. Not even the best AI in this class could fool you.";
+    } else if (correct >= Math.floor(total / 2) + 1) {
+      verdict = "Solid instincts. A few tells slipped past you, though.";
+    } else {
+      verdict = "The class fooled you more than you fooled them. Sharpen your ear for the tells.";
+    }
+
+    return { results: results, correct: correct, total: total, verdict: verdict };
+  }
+
+  // -------------------------------------------------------------------------
+  // Application state
+  // -------------------------------------------------------------------------
+
+  function freshState() {
+    var conversation = {};
+    var askedIds = {};
+    STUDENTS.forEach(function (s) {
+      conversation[s.name] = [];
+      askedIds[s.name] = [];
+    });
+    return {
+      phase: "intro",       // intro | interrogate | guessing | reveal
+      studentIdx: 0,
+      conversation: conversation,
+      askedIds: askedIds,
+      guesses: {}
+    };
+  }
+
+  var state = freshState();
+
+  function currentStudent() {
+    return STUDENTS[state.studentIdx];
+  }
+
+  // -------------------------------------------------------------------------
+  // Rendering helpers
+  // -------------------------------------------------------------------------
+
+  var app = document.getElementById("app");
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function headerHtml() {
+    return '<h1 class="coe-title">CLASS D DECEPTION</h1>';
+  }
+
+  function render() {
+    app.innerHTML = "";
+    var frag = document.createElement("div");
+    frag.innerHTML = headerHtml();
+    app.appendChild(frag);
+
+    if (state.phase === "intro") renderIntro();
+    else if (state.phase === "interrogate") renderInterrogate();
+    else if (state.phase === "guessing") renderGuessing();
+    else if (state.phase === "reveal") renderReveal();
+  }
+
+  function renderIntro() {
+    var card = document.createElement("div");
+    card.className = "coe-card";
+    card.innerHTML =
+      "You've been assigned to figure out which of your classmates are genuine, " +
+      "and which are AI plants running on borrowed personalities.<br><br>" +
+      "Ask each student <b>3 questions</b>. Watch for anything that sounds off - " +
+      "canned disclaimers, weirdly perfect structure, or an AI slipping out of " +
+      "character entirely.";
+    app.appendChild(card);
+
+    var btn = document.createElement("button");
+    btn.className = "coe-btn coe-btn-primary";
+    btn.textContent = "Begin Interrogation";
+    btn.onclick = function () {
+      state.phase = "interrogate";
+      render();
+    };
+    var wrap = document.createElement("div");
+    wrap.className = "coe-actions";
+    wrap.appendChild(btn);
+    app.appendChild(wrap);
+  }
+
+  function renderInterrogate() {
+    var student = currentStudent();
+    var total = STUDENTS.length;
+    var idx = state.studentIdx + 1;
+
+    var progress = document.createElement("div");
+    progress.className = "coe-progress";
+    progress.textContent = "Student " + idx + " / " + total;
+    app.appendChild(progress);
+
+    var h2 = document.createElement("h2");
+    h2.textContent = student.name;
+    app.appendChild(h2);
+
+    var card = document.createElement("div");
+    card.className = "coe-card";
+    card.innerHTML =
+      '<span class="coe-class-tag">' + escapeHtml(student.className) + '</span><br>' +
+      escapeHtml(student.background);
+    app.appendChild(card);
+
+    var convo = state.conversation[student.name];
+    convo.forEach(function (turn) {
+      var log = document.createElement("div");
+      log.className = "coe-log";
+      log.innerHTML =
+        '<span class="coe-you">You:</span> ' + escapeHtml(turn.q) + '<br>' +
+        '<span class="coe-them">' + escapeHtml(student.name) + ':</span> ' + escapeHtml(turn.a);
+      app.appendChild(log);
+    });
+
+    var asked = state.askedIds[student.name];
+    var remaining = QUESTIONS_PER_STUDENT - asked.length;
+
+    if (remaining > 0) {
+      var prompt = document.createElement("p");
+      prompt.innerHTML = "<b>Choose a question (" + remaining + " left to ask " +
+        escapeHtml(student.name) + "):</b>";
+      app.appendChild(prompt);
+
+      QUESTION_BANK.forEach(function (pair) {
+        var qid = pair[0], qtext = pair[1];
+        if (asked.indexOf(qid) !== -1) return;
+        var btn = document.createElement("button");
+        btn.className = "coe-btn";
+        btn.textContent = qtext;
+        btn.onclick = function () {
+          var answer = student.responses[qid];
+          state.askedIds[student.name].push(qid);
+          state.conversation[student.name].push({ q: qtext, a: answer });
+          render();
+        };
+        app.appendChild(btn);
+      });
+    } else {
+      var done = document.createElement("div");
+      done.className = "coe-card";
+      done.style.borderLeftColor = "var(--green)";
+      done.textContent = "You've asked " + student.name + " enough questions.";
+      app.appendChild(done);
+
+      var nextBtn = document.createElement("button");
+      nextBtn.className = "coe-btn coe-btn-primary";
+      nextBtn.textContent = idx < total ? "Next Student" : "Proceed to Final Verdict";
+      nextBtn.onclick = function () {
+        if (idx < total) {
+          state.studentIdx += 1;
+        } else {
+          state.phase = "guessing";
+        }
+        render();
+      };
+      var wrap = document.createElement("div");
+      wrap.className = "coe-actions";
+      wrap.appendChild(nextBtn);
+      app.appendChild(wrap);
+    }
+  }
+
+  function renderGuessing() {
+    var h2 = document.createElement("h2");
+    h2.textContent = "Final Verdict";
+    app.appendChild(h2);
+
+    var card = document.createElement("div");
+    card.className = "coe-card";
+    card.textContent = "You've spoken to all the students. Now decide: who's really an AI?";
+    app.appendChild(card);
+
+    var form = document.createElement("form");
+    var draftGuesses = {};
+
+    STUDENTS.forEach(function (student) {
+      var block = document.createElement("div");
+      block.className = "coe-card";
+
+      var label = document.createElement("p");
+      label.innerHTML = "Is <b>" + escapeHtml(student.name) + "</b> (" +
+        escapeHtml(student.className) + ") AI-powered?";
+      block.appendChild(label);
+
+      var group = document.createElement("div");
+      group.className = "coe-radio-group";
+
+      ["Not AI", "AI-powered"].forEach(function (optionLabel) {
+        var id = "guess-" + student.name.replace(/\s+/g, "-") + "-" + optionLabel.replace(/\s+/g, "-");
+        var wrap = document.createElement("label");
+
+        var radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "guess-" + student.name;
+        radio.id = id;
+        radio.value = optionLabel;
+        radio.onchange = function () {
+          draftGuesses[student.name] = (optionLabel === "AI-powered");
+        };
+
+        wrap.appendChild(radio);
+        wrap.appendChild(document.createTextNode(optionLabel));
+        group.appendChild(wrap);
+      });
+
+      block.appendChild(group);
+      form.appendChild(block);
+    });
+
+    var warning = document.createElement("p");
+    warning.style.color = "var(--red)";
+    warning.style.display = "none";
+    warning.textContent = "Give a verdict for every student before submitting.";
+    form.appendChild(warning);
+
+    var submitWrap = document.createElement("div");
+    submitWrap.className = "coe-actions";
+    var submitBtn = document.createElement("button");
+    submitBtn.type = "submit";
+    submitBtn.className = "coe-btn coe-btn-primary";
+    submitBtn.textContent = "Submit Verdict";
+    submitWrap.appendChild(submitBtn);
+    form.appendChild(submitWrap);
+
+    form.onsubmit = function (e) {
+      e.preventDefault();
+      var complete = STUDENTS.every(function (s) {
+        return draftGuesses.hasOwnProperty(s.name);
+      });
+      if (!complete) {
+        warning.style.display = "block";
+        return;
+      }
+      state.guesses = draftGuesses;
+      state.phase = "reveal";
+      render();
+    };
+
+    app.appendChild(form);
+  }
+
+  function renderReveal() {
+    var summary = evaluate(STUDENTS, state.guesses);
+
+    var summaryBlock = document.createElement("div");
+    summaryBlock.className = "coe-summary";
+    summaryBlock.innerHTML =
+      '<div class="score">' + summary.correct + ' / ' + summary.total + '</div>' +
+      '<div class="verdict-line">' + escapeHtml(summary.verdict) + '</div>';
+    app.appendChild(summaryBlock);
+
+    summary.results.forEach(function (result) {
+      var card = document.createElement("div");
+      card.className = "coe-card";
+
+      var verdictClass = result.correct ? "coe-verdict-correct" : "coe-verdict-wrong";
+      var verdictText = result.correct ? "CORRECT" : "WRONG";
+      var actually = result.actuallyAI ? "AI-powered" : "Rule-based (human-like) bot";
+      var guessed = result.guessedAI ? "AI-powered" : "Not AI";
+
+      var tellsHtml;
+      if (result.actuallyAI) {
+        var items = result.tells.map(function (t) {
+          return '<li class="coe-tell">' + escapeHtml(t) + '</li>';
+        }).join("");
+        tellsHtml = "<b>Tells you could have caught:</b><ul class=\"coe-tell-list\">" + items + "</ul>";
+      } else {
+        tellsHtml = "<i>No red flags - consistent personality, grounded verifiable details.</i>";
+      }
+
+      card.innerHTML =
+        '<div class="coe-verdict-name"><h4 style="margin:0">' + escapeHtml(result.name) +
+        '</h4><span class="coe-class-tag">' + escapeHtml(result.className) + '</span></div>' +
+        'Actually: ' + actually + '<br>' +
+        'Your guess: ' + guessed + ' &rarr; <span class="' + verdictClass + '">' + verdictText + '</span>' +
+        '<br><br>' + tellsHtml;
+
+      app.appendChild(card);
+    });
+
+    var again = document.createElement("button");
+    again.className = "coe-btn coe-btn-primary";
+    again.textContent = "Play Again";
+    again.onclick = function () {
+      state = freshState();
+      render();
+    };
+    var wrap = document.createElement("div");
+    wrap.className = "coe-actions";
+    wrap.appendChild(again);
+    app.appendChild(wrap);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
