@@ -456,6 +456,24 @@
   .jr-pagenav-count { color: var(--muted); font-size: 0.85em; }
 
   .jr-submit-note { text-align: center; color: var(--muted); margin-top: 0.6em; font-size: 0.9em; }
+
+  /* -------------------------------------------------------------------- */
+  /* Landing page silhouettes                                             */
+  /* -------------------------------------------------------------------- */
+
+  .intro-silhouettes {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 1.4em;
+    margin: 0 0 1.4em;
+    flex-wrap: wrap;
+  }
+  .silhouette-figure {
+    width: 84px;
+    flex: 0 0 auto;
+  }
+  .silhouette-figure svg { width: 100%; height: auto; display: block; }
 </style>
 </head>
 <body>
@@ -932,15 +950,67 @@
     else if (state.phase === "reveal") renderReveal();
   }
 
+  // ---------------------------------------------------------------------
+  // Landing page silhouettes - simple flat/geometric standing figures in a
+  // blazer-and-tie school uniform, built from basic SVG shapes only (no
+  // external art). Body geometry is shared; only the hair shape varies.
+  // ---------------------------------------------------------------------
+
+  function personSilhouette(hairStyle) {
+    var body =
+      '<polygon style="fill:var(--card-border)" points="24,68 76,68 70,96 64,150 36,150 30,96"></polygon>' +
+      '<rect style="fill:var(--card-border)" x="42" y="52" width="16" height="12"></rect>' +
+      '<rect style="fill:var(--card-border)" x="34" y="150" width="14" height="60" rx="4"></rect>' +
+      '<rect style="fill:var(--card-border)" x="52" y="150" width="14" height="60" rx="4"></rect>' +
+      '<polygon style="fill:var(--crimson);opacity:0.6" points="28,70 42,70 50,96 34,94"></polygon>' +
+      '<polygon style="fill:var(--crimson);opacity:0.6" points="72,70 58,70 50,96 66,94"></polygon>' +
+      '<polygon style="fill:var(--gold)" points="46,70 54,70 50,88"></polygon>';
+
+    var head = '<circle style="fill:var(--card-border)" cx="50" cy="36" r="18"></circle>';
+
+    var hair = "";
+    if (hairStyle === "bob") {
+      hair =
+        '<ellipse style="fill:var(--muted)" cx="50" cy="32" rx="21" ry="21"></ellipse>' +
+        '<rect style="fill:var(--muted)" x="27" y="30" width="10" height="36" rx="5"></rect>' +
+        '<rect style="fill:var(--muted)" x="63" y="30" width="10" height="36" rx="5"></rect>';
+    } else if (hairStyle === "spiky") {
+      hair =
+        '<circle style="fill:var(--muted)" cx="50" cy="32" r="19"></circle>' +
+        '<polygon style="fill:var(--muted)" points="30,26 36,10 42,25 48,6 54,25 60,9 66,24 70,22 70,34 30,34"></polygon>';
+    } else {
+      hair =
+        '<circle style="fill:var(--muted)" cx="50" cy="33" r="19"></circle>' +
+        '<path style="fill:var(--muted)" d="M67,26 C82,29 87,54 78,79 C74,91 65,89 68,73 C71,57 66,39 59,27 Z"></path>' +
+        '<rect style="fill:var(--gold)" x="63" y="29" width="9" height="5" rx="2"></rect>';
+    }
+
+    return '<svg viewBox="0 0 100 220" aria-hidden="true">' + hair + body + head + hair + '</svg>';
+  }
+
   function renderIntro() {
+    var silhouettes = document.createElement("div");
+    silhouettes.className = "intro-silhouettes";
+    ["bob", "spiky", "ponytail"].forEach(function (style) {
+      var fig = document.createElement("div");
+      fig.className = "silhouette-figure";
+      fig.innerHTML = personSilhouette(style);
+      silhouettes.appendChild(fig);
+    });
+    app.appendChild(silhouettes);
+
     var card = document.createElement("div");
     card.className = "coe-card";
     card.innerHTML =
-      "You've been assigned to figure out which of your classmates are genuine, " +
-      "and which are AI plants running on borrowed personalities.<br><br>" +
-      "Ask each student <b>3 questions</b>, choosing your line of questioning like " +
-      "a visual novel. Then open your investigation journal and mark down who you " +
-      "think is really AI.";
+      "A note slides under your door - no signature, just an instruction: " +
+      "report to the faculty annex before curfew.<br><br>" +
+      "When you arrive, you're told the truth. Several of your classmates aren't " +
+      "who they claim to be - AI plants, dropped into Class D wearing borrowed " +
+      "names and rehearsed lives. Faculty needs someone sharp enough to tell the " +
+      "difference. They've chosen you.<br><br>" +
+      "Question each of the six students in turn. <b>Three questions each</b> - no " +
+      "more. Read between the lines, then file your final report in the " +
+      "investigation journal.";
     app.appendChild(card);
 
     var btn = document.createElement("button");
