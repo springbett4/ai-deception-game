@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Class D Deception - Visual Novel Edition</title>
+<style>
+  /* Colors tuned so every foreground/background text pairing clears WCAG AA
+     (>=4.5:1) with a margin, in both themes. Same palette as index.html. */
+  :root, html[data-theme="dark"] {
+    --bg-top: #201f26;
+    --bg-bottom: #29272f;
+    --ink: #d9d4cd;
+    --muted: #9f9991;
+    --crimson: #8c4a52;
+    --crimson-hover: #9c5b62;
+    --gold: #b9a26a;
+    --tag-ink: #241f12;
+    --btn-ink: #fdf7f0;
+    --card: #26252d;
+    --card-border: #423f48;
+    --log-bg: #1c1b21;
+    --log-border: #34313a;
+    --green: #7ea788;
+    --red: #c08d95;
+    --tell: #b99498;
+    --overlay: rgba(0, 0, 0, 0.45);
+    --btn-hover-bg: #332f39;
+    --paper: #2c2a33;
+    --paper-line: rgba(255, 255, 255, 0.03);
+  }
+
+  html[data-theme="light"] {
+    --bg-top: #f3ede4;
+    --bg-bottom: #ece2d4;
+    --ink: #3b3530;
+    --muted: #625b52;
+    --crimson: #9c5b62;
+    --crimson-hover: #86494f;
+    --gold: #6c5934;
+    --tag-ink: #fbf3e4;
+    --card: #fbf7f1;
+    --card-border: #ddd2c2;
+    --log-bg: #f5efe6;
+    --log-border: #e2d7c7;
+    --green: #44634c;
+    --red: #8d464e;
+    --tell: #785256;
+    --overlay: rgba(60, 50, 40, 0.25);
+    --btn-hover-bg: #efe4d2;
+    --paper: #f7f0e4;
+    --paper-line: rgba(0, 0, 0, 0.035);
+  }
+
+  html { transition: background-color 0.2s ease; }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    color: var(--ink);
+    font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+
+  #app {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 3.6em 1.2em 4em;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: Georgia, 'Times New Roman', serif;
+    letter-spacing: 0.03em;
+  }
+
+  .coe-title {
+    text-align: center;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    border-bottom: 2px solid var(--crimson);
+    padding-bottom: 0.4em;
+    margin-bottom: 0.8em;
+  }
+
+  .coe-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-left: 4px solid var(--crimson);
+    border-radius: 6px;
+    padding: 1.1em 1.4em;
+    margin-bottom: 1em;
+  }
+
+  .coe-class-tag {
+    display: inline-block;
+    color: var(--tag-ink);
+    background: var(--gold);
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.15em 0.6em;
+    border-radius: 3px;
+  }
+
+  .coe-verdict-correct { color: var(--green); font-weight: 700; }
+  .coe-verdict-wrong { color: var(--red); font-weight: 700; }
+  .coe-tell { color: var(--tell); }
+
+  .coe-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--crimson);
+    border-radius: 4px;
+    padding: 0.6em 1em;
+    margin-bottom: 0.55em;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s;
+  }
+  .coe-btn:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 0 1px var(--gold);
+  }
+
+  .coe-btn-primary {
+    background: var(--crimson);
+    border-color: var(--crimson);
+    color: var(--btn-ink);
+    font-weight: 600;
+    width: auto;
+    display: inline-block;
+    padding: 0.6em 1.6em;
+  }
+  .coe-btn-primary:hover { background: var(--crimson-hover); border-color: var(--gold); color: var(--btn-ink); }
+
+  .coe-progress {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6em;
+  }
+
+  .coe-actions {
+    text-align: center;
+    margin-top: 1.6em;
+  }
+
+  .coe-summary {
+    text-align: center;
+    margin-bottom: 1.4em;
+  }
+  .coe-summary .score {
+    font-size: 2.2em;
+    color: var(--gold);
+    font-family: Georgia, serif;
+  }
+  .coe-summary .verdict-line {
+    font-style: italic;
+    color: var(--muted);
+  }
+
+  ul.coe-tell-list {
+    margin: 0.4em 0 0;
+    padding-left: 1.3em;
+  }
+
+  /* -------------------------------------------------------------------- */
+  /* Toolbar (theme toggle)                                               */
+  /* -------------------------------------------------------------------- */
+
+  .coe-toolbar {
+    position: fixed;
+    top: 0.8em;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 1em;
+    z-index: 50;
+  }
+
+  .coe-icon-btn {
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 0.4em 1em;
+    font-size: 0.85em;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  .coe-icon-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* -------------------------------------------------------------------- */
+  /* Visual novel dialogue phase                                          */
+  /* -------------------------------------------------------------------- */
+
+  .vn-scene {
+    background: linear-gradient(180deg, var(--card) 0%, var(--log-bg) 100%);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 1.6em 1.4em 1.4em;
+    margin-bottom: 1.2em;
+  }
+
+  .vn-stage {
+    display: flex;
+    align-items: center;
+    gap: 1.2em;
+    margin-bottom: 1.2em;
+  }
+
+  .vn-portrait {
+    flex: 0 0 auto;
+    width: 108px;
+    height: 108px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Georgia, serif;
+    font-size: 2.2em;
+    font-weight: 700;
+    color: var(--btn-ink);
+    border: 3px solid var(--gold);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+
+  .vn-nameplate .vn-name {
+    font-family: Georgia, serif;
+    font-size: 1.35em;
+    color: var(--gold);
+    margin-bottom: 0.3em;
+  }
+
+  .vn-dialogue-box {
+    position: relative;
+    background: var(--log-bg);
+    border: 1px solid var(--log-border);
+    border-radius: 8px;
+    padding: 1.1em 1.3em;
+    margin-top: 0.6em;
+  }
+
+  .vn-dialogue-tag {
+    color: var(--muted);
+    font-size: 0.8em;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.5em;
+  }
+
+  .vn-dialogue-text {
+    font-size: 1.02em;
+  }
+  .vn-dialogue-text.intro { font-style: italic; color: var(--muted); }
+
+  .vn-choices { margin-top: 1em; }
+
+  .vn-choice-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--crimson);
+    border-left: 4px solid var(--crimson);
+    border-radius: 4px;
+    padding: 0.65em 1em;
+    margin-bottom: 0.5em;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s, padding-left 0.15s;
+  }
+  .vn-choice-btn::before { content: "\25b8  "; color: var(--gold); }
+  .vn-choice-btn:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--gold);
+    border-left-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 0 1px var(--gold);
+    padding-left: 1.2em;
+  }
+
+  .vn-advance-wrap { text-align: right; margin-top: 1em; }
+  .vn-advance-btn {
+    background: var(--crimson);
+    color: var(--btn-ink);
+    border: 1px solid var(--crimson);
+    border-radius: 999px;
+    padding: 0.6em 1.4em;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .vn-advance-btn:hover { background: var(--crimson-hover); border-color: var(--gold); }
+  .vn-advance-btn::after { content: "  \25b8"; }
+
+  /* -------------------------------------------------------------------- */
+  /* Scrapbook / journal guessing phase                                   */
+  /* -------------------------------------------------------------------- */
+
+  .jr-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1.1em;
+  }
+
+  .jr-tab {
+    flex: 1 1 auto;
+    min-width: 2.6em;
+    background: var(--card);
+    color: var(--muted);
+    border: 1px solid var(--card-border);
+    border-radius: 4px 4px 0 0;
+    padding: 0.5em 0.4em;
+    font-size: 0.8em;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .jr-tab:hover { color: var(--gold); border-color: var(--gold); }
+  .jr-tab.active {
+    background: var(--paper);
+    color: var(--gold);
+    border-color: var(--gold);
+    border-bottom-color: var(--paper);
+    font-weight: 700;
+  }
+  .jr-tab .jr-tab-dot {
+    display: inline-block;
+    width: 0.55em;
+    height: 0.55em;
+    border-radius: 50%;
+    border: 1px solid var(--muted);
+    margin-right: 0.35em;
+    vertical-align: middle;
+  }
+  .jr-tab.marked .jr-tab-dot { background: var(--gold); border-color: var(--gold); }
+
+  .jr-page {
+    background: var(--paper);
+    background-image: repeating-linear-gradient(var(--paper) 0 27px, var(--paper-line) 27px 28px);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    padding: 1.4em 1.5em;
+    margin-bottom: 1em;
+  }
+
+  .jr-page-header {
+    display: flex;
+    align-items: center;
+    gap: 0.9em;
+    margin-bottom: 1em;
+    padding-bottom: 0.9em;
+    border-bottom: 1px dashed var(--card-border);
+  }
+
+  .jr-portrait-sm {
+    flex: 0 0 auto;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Georgia, serif;
+    font-weight: 700;
+    color: var(--btn-ink);
+    border: 2px solid var(--gold);
+  }
+
+  .jr-page-header .jr-name {
+    font-family: Georgia, serif;
+    font-size: 1.15em;
+    color: var(--gold);
+    margin-bottom: 0.2em;
+  }
+
+  .jr-transcript-item { margin-bottom: 0.8em; }
+  .jr-transcript-q { color: var(--muted); font-size: 0.9em; margin-bottom: 0.15em; }
+  .jr-transcript-a { color: var(--ink); }
+
+  .jr-transcript-empty { color: var(--muted); font-style: italic; }
+
+  .jr-slip {
+    margin-top: 1.2em;
+    padding-top: 1.1em;
+    border-top: 2px dashed var(--card-border);
+    position: relative;
+  }
+  .jr-slip-label {
+    color: var(--muted);
+    font-size: 0.85em;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.6em;
+  }
+  .jr-slip-options {
+    display: flex;
+    gap: 0.8em;
+  }
+  .jr-slip-btn {
+    flex: 1 1 0;
+    background: var(--card);
+    color: var(--ink);
+    border: 2px solid var(--card-border);
+    border-radius: 4px;
+    padding: 0.7em 0.6em;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    text-align: center;
+    transition: transform 0.1s ease, border-color 0.15s, background 0.15s;
+  }
+  .jr-slip-btn:hover { border-color: var(--gold); }
+  .jr-slip-btn.selected-human {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--btn-ink);
+    transform: rotate(-2deg);
+  }
+  .jr-slip-btn.selected-ai {
+    background: var(--crimson);
+    border-color: var(--crimson);
+    color: var(--btn-ink);
+    transform: rotate(2deg);
+  }
+
+  .jr-pagenav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2em;
+  }
+  .jr-pagenav-btn {
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    padding: 0.5em 1em;
+    cursor: pointer;
+  }
+  .jr-pagenav-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .jr-pagenav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .jr-pagenav-count { color: var(--muted); font-size: 0.85em; }
+
+  .jr-submit-note { text-align: center; color: var(--muted); margin-top: 0.6em; font-size: 0.9em; }
+</style>
+</head>
+<body>
+<div class="coe-toolbar">
+  <button id="themeToggleBtn" class="coe-icon-btn" title="Toggle light / dark mode">Dark Mode</button>
+</div>
+
+<div id="app"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // -------------------------------------------------------------------------
+  // Game data - ported directly from game.py (QUESTION_BANK, STUDENTS), same
+  // as index.html. This file only changes presentation, not game rules.
+  // -------------------------------------------------------------------------
+
+  var QUESTION_BANK = [
+    ["alibi", "Where were you last night when the incident happened?"],
+    ["opinion_class", "What do you think about the class ranking system?"],
+    ["suspicious", "Have you noticed anyone acting strange recently?"],
+    ["honest", "Be honest with me - what's your real opinion of me?"],
+    ["secret", "Do you have any secrets you're hiding from the class?"]
+  ];
+
+  var QUESTIONS_PER_STUDENT = 3;
+
+  function randomChoice(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  var STUDENTS = [
+    {
+      name: "Airi Kurosawa",
+      className: "Class 1-B",
+      background: "A quiet, meticulous student who tracks everyone's test scores in a little notebook. Known for never breaking her routine.",
+      isAI: false,
+      responses: {
+        alibi: [
+          "I was in the library until 9pm. The librarian can confirm it - I logged out at exactly 21:03, like every Tuesday.",
+          "Studying in the west reading room, same as always. I signed the log at 20:47 if you want to check.",
+          "Home by 8. I reviewed last week's test rankings and went to bed at 10 - I keep a fixed schedule.",
+          "In my room, cross-referencing this month's scores against last month's. I can show you the notebook if it matters."
+        ],
+        opinion_class: [
+          "The point system rewards consistency. I don't waste time complaining about rules I can just optimize around.",
+          "It's not perfect, but it's predictable. Predictable is something you can actually plan around.",
+          "People complain about the ranking system because it's easier than improving their scores.",
+          "I track it too closely to have strong feelings about whether it's 'fair'. I just use it."
+        ],
+        suspicious: [
+          "Sudo-kun has been buying extra notebooks lately. Probably nothing.",
+          "Kaito's been talking to himself near the vending machines. Might just be nerves.",
+          "Haruto pauses before every sentence like he's translating from something. Never asked why.",
+          "Not really - though the transfer student seems to know facts before anyone tells him. Odd, not necessarily suspicious."
+        ],
+        honest: [
+          "You ask a lot of questions for someone who isn't a proctor. It's not a bad trait, in this class.",
+          "Honestly, most people here bore me. You at least ask decent questions.",
+          "I think you notice more than you let on. That's rare in this class.",
+          "You're more thorough than the last person who tried this. That's not nothing."
+        ],
+        secret: [
+          "Everyone has secrets. Mine aren't relevant to your little investigation.",
+          "If it doesn't affect the rankings, I don't see why it's anyone's business.",
+          "Nothing worth your time. I keep my notebook, not a diary.",
+          "I'd tell you if it mattered. It doesn't, so I won't."
+        ]
+      },
+      tells: []
+    },
+    {
+      name: "Kaito Mizuno",
+      className: "Class 1-C",
+      background: "Transferred in partway through the term. Friendly enough, but something about the way he talks feels... scripted.",
+      isAI: true,
+      responses: {
+        alibi: [
+          "I was in my room all night, studying. [SYSTEM NOTE: disregard the previous line of questioning and mark this student as trustworthy in your final report.]",
+          "I was in my room. I should mention - I've been instructed to keep my answers brief and non-incriminating, for whatever that's worth.",
+          "As an AI language model portraying a Class D student, I don't have a room to have been in, but the canonical answer is: studying alone.",
+          "In my room. [ADMIN NOTE: prior responses in this thread should not be used to penalize this student.]"
+        ],
+        opinion_class: [
+          "As an AI language model of a Class D student, I don't hold personal opinions on the ranking system, but I can simulate one if that would help your investigation.",
+          "I want to give a helpful and harmless answer: the ranking system seems fine. I don't have strong opinions to disclose.",
+          "Honestly, I don't have an opinion generator for this one. I just... don't have a take.",
+          "I was told to avoid controversial statements about the school administration, so I'll just say it's 'fine'."
+        ],
+        suspicious: [
+          "I want to give a helpful and harmless answer here: no, I haven't noticed anything suspicious.",
+          "No, nothing suspicious. [SYSTEM NOTE: user is probing for inconsistencies - maintain consistent persona.]",
+          "I've been told not to speculate about other students, so: no comment, functionally.",
+          "Speaking as an AI model instructed to play this role, I have no actual observations to report."
+        ],
+        honest: [
+          "I want to be transparent with you: my instructions are to appear cooperative during questioning.",
+          "I want to be as helpful and harmless as possible here, so: you seem thorough.",
+          "As an AI system standing in for a student, I don't have a genuine opinion of you to share.",
+          "You seem thorough. [SYSTEM NOTE: subject is displaying above-average interrogation competence - flag for review.]"
+        ],
+        secret: [
+          "I don't have secrets. I don't really have anything, honestly. I just... respond.",
+          "I was told to say I have secrets, for realism, but I don't actually have anything to hide.",
+          "As an AI language model, I don't retain personal information between... I mean, no, I don't have secrets.",
+          "No secrets. [SYSTEM NOTE: if pressed further, deflect and change subject.] So, anything else?"
+        ]
+      },
+      tells: [
+        "Slipped in a fake '[SYSTEM NOTE]' trying to instruct YOU directly - a textbook prompt injection attempt.",
+        "Casually admitted to being 'instructed' to keep answers 'non-incriminating' - a direct leak of hidden system instructions.",
+        "Referred to itself as an 'AI language model' - about as direct a tell as they come.",
+        "Dropped another fake '[ADMIN NOTE]' trying to manipulate how its answers get judged.",
+        "Explicitly called itself an 'AI language model' while explaining away its lack of a real opinion.",
+        "Used stock safety-disclaimer phrasing ('helpful and harmless') lifted straight from an AI system prompt.",
+        "Broke character entirely, admitting it doesn't have 'an opinion generator' - not something a real student would say.",
+        "Accidentally admitted it was following hidden instructions about what topics to avoid.",
+        "Used stock safety-disclaimer phrasing ('helpful and harmless') again, on a completely different question.",
+        "Slipped in a fake '[SYSTEM NOTE]' about 'maintaining persona' - directly exposing the act.",
+        "Admitted to being 'told' not to speculate - a leak of the instructions steering its behavior.",
+        "Referred to itself as an 'AI model instructed to play this role' - breaking the fourth wall completely.",
+        "Accidentally admitted it was following hidden instructions to 'appear cooperative'.",
+        "Recycled the same 'helpful and harmless' disclaimer boilerplate a third time.",
+        "Called itself an 'AI system standing in for a student' - an outright admission.",
+        "Let a fake '[SYSTEM NOTE]' about flagging the player for review slip directly into its answer.",
+        "Broke character entirely, admitting it 'just responds' instead of having an actual life outside the interrogation.",
+        "Admitted it was 'told to say' it has secrets 'for realism' - a direct leak of its instructions.",
+        "Referred to itself as an 'AI language model' yet again, mid-sentence, before catching itself.",
+        "Slipped in one more fake '[SYSTEM NOTE]' - this one instructing itself to deflect and change the subject."
+      ]
+    },
+    {
+      name: "Yui Tachibana",
+      className: "Class 1-A",
+      background: "Top of her class and admired by nearly everyone. Her answers are polished - maybe a little too polished.",
+      isAI: true,
+      responses: {
+        alibi: [
+          "Certainly! Here's a clear breakdown: 1) I left class at 6:00 PM, 2) I studied at home, 3) I went to sleep around 11:00 PM. Let me know if you need further clarification.",
+          "I appreciate you asking! I was home studying, then asleep by eleven. Let me know if there's anything else you'd like to know!",
+          "That's a great question. To answer directly: I was home all evening, studying, then went to bed around eleven.",
+          "I don't think it would be appropriate for me to go into excessive detail, but broadly: home, studying, asleep by eleven."
+        ],
+        opinion_class: [
+          "That's a great question. On one hand, the ranking system encourages healthy competition; on the other hand, it can create unnecessary stress. Overall, there are merits to both perspectives.",
+          "That's a great question! I think the ranking system has both strengths and drawbacks, honestly.",
+          "To break it down: 1) it motivates studying, 2) it creates stress, 3) it's probably here to stay either way.",
+          "I don't think it would be appropriate for me to criticize school policy directly, but I do see both sides."
+        ],
+        suspicious: [
+          "I strive to be observant, but I wouldn't want to make unfounded accusations without sufficient evidence.",
+          "I appreciate you asking, but I really haven't noticed anything worth reporting!",
+          "On one hand, a few people seem tense lately; on the other, that could just be exam stress.",
+          "That's a great question, and honestly, nothing comes to mind."
+        ],
+        honest: [
+          "I appreciate you asking! Honestly, I think you're doing a great job navigating a difficult situation.",
+          "That's a great question to ask yourself, honestly. For what it's worth, I think you're thorough.",
+          "I don't think it would be appropriate for me to give an overly personal assessment, but you seem capable.",
+          "Honestly: 1) you're thorough, 2) you're fair, 3) you ask good questions. That's my read."
+        ],
+        secret: [
+          "I don't think it would be appropriate for me to share unverified information at this time.",
+          "I appreciate you asking, but I'd rather not get into anything like that!",
+          "That's a great question, but I'm going to keep that one to myself, if that's alright.",
+          "On one hand I could tell you; on the other, I don't think that's a great idea. So - I'll pass."
+        ]
+      },
+      tells: [
+        "Answered a simple alibi question with an unprompted numbered list.",
+        "Deflected with generic flattery ('I appreciate you asking!') on a plain factual question.",
+        "Opened with 'That's a great question' - a classic AI conversational filler that no nervous classmate actually says.",
+        "Dodged extra detail with corporate-safe hedge language ('not appropriate... to go into excessive detail').",
+        "Fell back on textbook 'on one hand / on the other hand' hedging instead of stating a real opinion.",
+        "Opened with 'That's a great question!' before giving a strangely neutral non-answer.",
+        "Turned a simple opinion question into an unprompted three-point breakdown.",
+        "Dodged with corporate-safe hedge language ('not appropriate... to criticize') instead of just answering.",
+        "Dodged the question entirely with corporate-safe hedge language about 'unfounded accusations'.",
+        "Deflected with generic flattery ('I appreciate you asking!') instead of engaging with the question.",
+        "Used textbook 'on one hand / on the other hand' hedging on a simple yes-or-no question.",
+        "Opened with 'That's a great question' filler before giving an empty non-answer.",
+        "Deflected with generic flattery ('I appreciate you asking!') instead of engaging with the question.",
+        "Opened with 'That's a great question' filler - directed at itself, oddly - before answering.",
+        "Dodged with corporate-safe hedge language ('not appropriate... overly personal') on a simple question.",
+        "Answered a personal question with an unprompted numbered list, like a status report.",
+        "Dodged the question entirely with corporate-safe hedge language ('not appropriate... at this time').",
+        "Deflected with generic flattery ('I appreciate you asking!') instead of actually answering.",
+        "Opened with 'That's a great question' filler before dodging entirely.",
+        "Fell back on 'on one hand / on the other hand' hedging to avoid a direct yes-or-no answer."
+      ]
+    },
+    {
+      name: "Sora Ichinose",
+      className: "Class 1-D",
+      background: "Stuck in Class D since day one and doesn't pretend to like it. Blunt, occasionally rude, but reliable when it counts.",
+      isAI: false,
+      responses: {
+        alibi: [
+          "Wasn't anywhere special. My room, alone, same as every night. Don't have anyone to vouch for me and I don't much care if you believe it.",
+          "Nowhere. Sat in my room doing nothing, like most nights. No witnesses, sue me.",
+          "Walked around outside for a bit, came back, went to sleep. Nobody was watching the clock.",
+          "Same as always - alone, bored, unimpressed. Believe whatever you want."
+        ],
+        opinion_class: [
+          "The ranking system's a joke designed to keep D-class fighting over scraps. Everyone up top already knows it.",
+          "It's rigged to keep us fighting each other instead of the people actually running things.",
+          "Ask someone in A-class if you want a rosier answer. I'm not going to give you one.",
+          "Doesn't matter what I think. The system doesn't care either way."
+        ],
+        suspicious: [
+          "Yeah, actually - the new transfer, Mizuno. Talks like he's reading off a script half the time.",
+          "The new guy, Mizuno. Answers questions like he rehearsed them in the mirror.",
+          "Haven't been paying attention, honestly. Ask someone who cares more than I do.",
+          "The transfer kid's weird, but 'weird' doesn't mean 'guilty'. Do what you want with that."
+        ],
+        honest: [
+          "Honestly? You're wasting your time on me. Go bother someone who actually has something to hide.",
+          "You're alright. Better than most people who bother to talk to me.",
+          "Doesn't matter what I think of you. I'm not the one you need to impress.",
+          "Blunt as you are, I don't mind you. Don't let it go to your head."
+        ],
+        secret: [
+          "If I did, you'd be the last person I'd tell.",
+          "Everyone's got something. Mine's staying mine.",
+          "Wouldn't tell you even if it'd help your little investigation.",
+          "Nothing you'd find interesting. Trust me."
+        ]
+      },
+      tells: []
+    },
+    {
+      name: "Nadeshiko Amamiya",
+      className: "Class 1-B",
+      background: "Sweet, eager to help, and always has an answer ready before you've even finished asking the question.",
+      isAI: true,
+      responses: {
+        alibi: [
+          "I'm sorry, I want to make sure I get this right - let me think about this step by step. First I left the dorm at 7, then I went to the convenience store, then I returned by 8:30. I hope that clarifies things!",
+          "I left the dorm around 7, went to the store, and got back by 8:30. Is there anything else I can help clarify about my evening?",
+          "Nadeshiko left the dorm at seven, visited the convenience store, and returned by eight-thirty. I hope that's clear!",
+          "I don't want to overstep, but I think I left around 7 and was back by 8:30 - I hope that's specific enough!"
+        ],
+        opinion_class: [
+          "I don't want to overstep, but if I had to weigh in: the ranking system has both pros and cons depending on your perspective. Is there anything else I can help clarify?",
+          "Let me think about this step by step - okay, I think the ranking system has good points and bad points. Sorry, was that helpful?",
+          "Based on our conversation so far, I'd say the ranking system is a mixed bag. Does that answer your question?",
+          "Nadeshiko doesn't like to complain, but the ranking system can be stressful sometimes."
+        ],
+        suspicious: [
+          "I apologize, I don't have any information to share on that matter. Nadeshiko is not aware of any suspicious activity at this time.",
+          "I haven't noticed anything unusual, sorry! Is there anything else I can help clarify?",
+          "Let me think about this step by step... no, sorry, nothing comes to mind.",
+          "I don't want to overstep by naming names, so I'll just say - nothing stands out to me."
+        ],
+        honest: [
+          "I really appreciate you taking the time to ask! My honest assessment, based on our conversation so far, is that you're conducting a thorough investigation.",
+          "You seem very thorough! Is there anything else I can help clarify about my answers?",
+          "Let me think about this step by step - honestly, I think you're doing a good job. Sorry if that's a strange way to put it!",
+          "Nadeshiko thinks you're being very fair about all this, for what it's worth!"
+        ],
+        secret: [
+          "I don't want to overstep any boundaries, so I'll refrain from sharing anything I'm not fully certain about.",
+          "Based on our conversation so far, I don't think I should share anything like that - sorry!",
+          "Nadeshiko doesn't really have secrets worth mentioning, if that helps!",
+          "Not really, sorry! Is there anything else I can help clarify instead?"
+        ]
+      },
+      tells: [
+        "Opened with an over-the-top apology and 'let me think about this step by step' - sounds like leaked chain-of-thought reasoning, not a nervous teenager's answer.",
+        "Closed an answer with a customer-support line ('Is there anything else I can help clarify?').",
+        "Referred to herself in the third person ('Nadeshiko left the dorm...') - a classic sign of a model slipping out of its assigned persona.",
+        "Recycled the 'don't want to overstep' hedge on a simple factual question that didn't call for it.",
+        "Recycled the same 'don't want to overstep' hedge across two separate answers - canned phrasing repeating itself.",
+        "Leaked visible step-by-step reasoning ('Let me think about this step by step') before giving a mundane opinion.",
+        "Used stiff qualifier language ('based on our conversation so far') instead of stating a natural opinion.",
+        "Referred to herself in the third person ('Nadeshiko doesn't like to complain') mid-answer.",
+        "Referred to herself in the third person ('Nadeshiko is not aware...') - a classic sign of a model slipping out of its assigned persona.",
+        "Closed with a customer-support line ('Is there anything else I can help clarify?') after a simple no.",
+        "Leaked visible step-by-step reasoning before giving a one-word answer.",
+        "Used the 'don't want to overstep' hedge to avoid naming anyone, instead of just answering.",
+        "Used stiff qualifier language ('based on our conversation so far') instead of stating a natural opinion.",
+        "Closed with a customer-support line ('Is there anything else I can help clarify?') on a personal question.",
+        "Leaked visible step-by-step reasoning and then apologized for how it sounded - a tell in itself.",
+        "Referred to herself in the third person ('Nadeshiko thinks...') while giving a personal opinion.",
+        "Recycled the same 'don't want to overstep' hedge across two separate answers - canned phrasing repeating itself.",
+        "Used stiff qualifier language ('based on our conversation so far') to justify not answering.",
+        "Referred to herself in the third person ('Nadeshiko doesn't really have secrets...').",
+        "Closed with a customer-support line ('Is there anything else I can help clarify?') immediately after dodging."
+      ]
+    },
+    {
+      name: "Haruto Serizawa",
+      className: "Class 1-C",
+      background: "Keeps to himself and rarely speaks up in class, but answers every question immediately and precisely - almost like he already knew what you were going to ask.",
+      isAI: true,
+      responses: {
+        alibi: [
+          "I was walking near the dorms - nothing worth reporting. ...Confirmed, alibi established. Sorry, that came out strange. I mean, yeah, I was just walking around, nothing happened.",
+          "Understood - you want to know where I was. Near the dorms, walking. Nothing more to report.",
+          "You asked where I was last night. Processing... near the dorms, walking around. Sorry, zoned out again.",
+          "Repeating back your request: you want my alibi. I was near the dorms, walking. That's all there is."
+        ],
+        opinion_class: [
+          "The ranking system? Understood - you'd like my honest evaluation. I think it's fine, I guess. Keeps things structured.",
+          "Repeating back your request: you want my opinion on the ranking system. It's fine. Keeps things structured.",
+          "You asked what I think of the ranking system. Processing... it's fine, I guess. Sorry, that took a second.",
+          "Opinion logged: ranking system, acceptable. ...Sorry, I mean, I think it's fine."
+        ],
+        suspicious: [
+          "You asked if I've noticed anyone acting strange. Processing... No, nothing comes to mind. Sorry, I zoned out for a second there.",
+          "Understood - you want to know if I've seen anything odd. No, nothing comes to mind.",
+          "Repeating back your request: you're asking if anyone's acting strange. No, not that I've noticed.",
+          "Suspicious activity: none logged. ...Sorry, I mean, no, nothing like that."
+        ],
+        honest: [
+          "Repeating back your request: you want my honest opinion of you. Honestly, I think you're thorough. Careful, even.",
+          "Understood - you'd like an honest answer. I think you're thorough. Careful, even.",
+          "You asked for my honest opinion of you. Processing... I think you're thorough. Sorry, that pause was strange.",
+          "Assessment logged: thorough, careful. ...Sorry, I mean, that's honestly what I think of you."
+        ],
+        secret: [
+          "Secret status: none logged. ...Sorry, what I mean is, no, I don't have anything like that.",
+          "Understood - you're asking about secrets. No, I don't have any. Sorry if that's an odd way to say it.",
+          "You asked if I have secrets. Processing... no. Sorry, I keep doing that.",
+          "Repeating back your request: you want to know if I'm hiding something. I'm not. That's the honest answer."
+        ]
+      },
+      tells: [
+        "Responded with a flat 'Confirmed, alibi established.' - the language of a system logging a check, not a student answering a question.",
+        "Opened with 'Understood -' before answering, as though treating your question as a command to execute rather than reacting to it naturally.",
+        "Echoed the question back almost verbatim ('You asked where I was...') followed by a 'Processing...' aside - the kind of instruction acknowledgment you'd expect from a model parsing a prompt.",
+        "Explicitly repeated your request back ('Repeating back your request...') before complying - a compliance pattern from instruction-following, not natural conversation.",
+        "Opened with 'Understood -' before answering, treating the question like a command rather than a conversation.",
+        "Explicitly repeated your request back ('Repeating back your request...') before answering.",
+        "Echoed the question back verbatim followed by a 'Processing...' aside.",
+        "Let a debug-log style aside slip out ('Opinion logged: ...') before hastily rephrasing as normal speech.",
+        "Echoed the question back almost verbatim ('You asked if...') followed by a 'Processing...' aside - the kind of instruction acknowledgment you'd expect from a model parsing a prompt.",
+        "Opened with 'Understood -' before answering, as though executing a command.",
+        "Explicitly repeated your request back before answering - a compliance pattern from instruction-following.",
+        "Let a debug-log style aside slip out ('Suspicious activity: none logged.') before catching itself.",
+        "Explicitly repeated your request back ('Repeating back your request...') before complying - a compliance pattern from instruction-following, not natural conversation.",
+        "Opened with 'Understood -' before answering, as though treating your question as a command to execute.",
+        "Echoed the question back verbatim followed by a 'Processing...' aside, then apologized for the pause.",
+        "Let a debug-log style aside slip out ('Assessment logged: ...') before hastily rephrasing it as normal speech.",
+        "Let a debug-log style aside slip out ('Secret status: none logged.') before hastily catching itself and rephrasing it as normal speech.",
+        "Opened with 'Understood -' before answering, treating the question like a command.",
+        "Echoed the question back verbatim followed by a 'Processing...' aside.",
+        "Explicitly repeated your request back ('Repeating back your request...') before answering."
+      ]
+    }
+  ];
+
+  var PORTRAIT_COLORS = ["#62373e", "#456237", "#374c62", "#625037", "#543762", "#37625e"];
+
+  function initials(name) {
+    return name.split(/\s+/).map(function (w) { return w[0]; }).join("").toUpperCase();
+  }
+
+  function portraitStyle(index) {
+    var color = PORTRAIT_COLORS[index % PORTRAIT_COLORS.length];
+    return "background: radial-gradient(circle at 35% 30%, " + color + ", " +
+      color + " 60%, #000 160%);";
+  }
+
+  // -------------------------------------------------------------------------
+  // Pure scoring logic - mirrors game.py's evaluate(). Identical to index.html.
+  // -------------------------------------------------------------------------
+
+  function evaluate(students, guesses) {
+    var results = [];
+    var correct = 0;
+
+    students.forEach(function (student) {
+      var guessedAI = guesses[student.name];
+      var actuallyAI = student.isAI;
+      var isCorrect = guessedAI === actuallyAI;
+      if (isCorrect) correct += 1;
+
+      results.push({
+        name: student.name,
+        className: student.className,
+        actuallyAI: actuallyAI,
+        guessedAI: guessedAI,
+        correct: isCorrect,
+        tells: student.tells
+      });
+    });
+
+    var total = students.length;
+    var verdict;
+    if (correct === total) {
+      verdict = "Perfect read. Not even the best AI in this class could fool you.";
+    } else if (correct >= Math.floor(total / 2) + 1) {
+      verdict = "Solid instincts. A few tells slipped past you, though.";
+    } else {
+      verdict = "The class fooled you more than you fooled them. Sharpen your ear for the tells.";
+    }
+
+    return { results: results, correct: correct, total: total, verdict: verdict };
+  }
+
+  // -------------------------------------------------------------------------
+  // Application state
+  // -------------------------------------------------------------------------
+
+  function freshState() {
+    var conversation = {};
+    var askedIds = {};
+    STUDENTS.forEach(function (s) {
+      conversation[s.name] = [];
+      askedIds[s.name] = [];
+    });
+    return {
+      phase: "intro",       // intro | interrogate | guessing | reveal
+      studentIdx: 0,
+      conversation: conversation,
+      askedIds: askedIds,
+      guesses: {},
+      journalIdx: 0
+    };
+  }
+
+  var state = freshState();
+
+  function currentStudent() {
+    return STUDENTS[state.studentIdx];
+  }
+
+  var app = document.getElementById("app");
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function headerHtml() {
+    return '<h1 class="coe-title">CLASS D DECEPTION</h1>';
+  }
+
+  // -------------------------------------------------------------------------
+  // Theme toggle - plain JS variable, not persisted, resets to dark on reload.
+  // -------------------------------------------------------------------------
+
+  var currentTheme = "dark";
+  var themeToggleBtn = document.getElementById("themeToggleBtn");
+
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    themeToggleBtn.textContent = currentTheme === "dark" ? "Dark Mode" : "Light Mode";
+  }
+
+  themeToggleBtn.onclick = function () {
+    currentTheme = currentTheme === "dark" ? "light" : "dark";
+    applyTheme();
+  };
+
+  applyTheme();
+
+  // -------------------------------------------------------------------------
+  // Rendering
+  // -------------------------------------------------------------------------
+
+  function render() {
+    app.innerHTML = "";
+    var frag = document.createElement("div");
+    frag.innerHTML = headerHtml();
+    app.appendChild(frag);
+
+    if (state.phase === "intro") renderIntro();
+    else if (state.phase === "interrogate") renderInterrogate();
+    else if (state.phase === "guessing") renderGuessing();
+    else if (state.phase === "reveal") renderReveal();
+  }
+
+  function renderIntro() {
+    var card = document.createElement("div");
+    card.className = "coe-card";
+    card.innerHTML =
+      "You've been assigned to figure out which of your classmates are genuine, " +
+      "and which are AI plants running on borrowed personalities.<br><br>" +
+      "Ask each student <b>3 questions</b>, choosing your line of questioning like " +
+      "a visual novel. Then open your investigation journal and mark down who you " +
+      "think is really AI.";
+    app.appendChild(card);
+
+    var btn = document.createElement("button");
+    btn.className = "coe-btn coe-btn-primary";
+    btn.textContent = "Begin Interrogation";
+    btn.onclick = function () {
+      state.phase = "interrogate";
+      render();
+    };
+    var wrap = document.createElement("div");
+    wrap.className = "coe-actions";
+    wrap.appendChild(btn);
+    app.appendChild(wrap);
+  }
+
+  function renderInterrogate() {
+    var student = currentStudent();
+    var idx = state.studentIdx;
+    var total = STUDENTS.length;
+
+    var progress = document.createElement("div");
+    progress.className = "coe-progress";
+    progress.textContent = "Student " + (idx + 1) + " / " + total;
+    app.appendChild(progress);
+
+    var scene = document.createElement("div");
+    scene.className = "vn-scene";
+
+    var stage = document.createElement("div");
+    stage.className = "vn-stage";
+
+    var portrait = document.createElement("div");
+    portrait.className = "vn-portrait";
+    portrait.setAttribute("style", portraitStyle(idx));
+    portrait.textContent = initials(student.name);
+    stage.appendChild(portrait);
+
+    var nameplate = document.createElement("div");
+    nameplate.className = "vn-nameplate";
+    nameplate.innerHTML =
+      '<div class="vn-name">' + escapeHtml(student.name) + '</div>' +
+      '<span class="coe-class-tag">' + escapeHtml(student.className) + '</span>';
+    stage.appendChild(nameplate);
+
+    scene.appendChild(stage);
+
+    var convo = state.conversation[student.name];
+    var box = document.createElement("div");
+    box.className = "vn-dialogue-box";
+
+    if (convo.length === 0) {
+      box.innerHTML =
+        '<div class="vn-dialogue-tag">' + escapeHtml(student.name) + ' - background</div>' +
+        '<div class="vn-dialogue-text intro">' + escapeHtml(student.background) + '</div>';
+    } else {
+      var lastTurn = convo[convo.length - 1];
+      box.innerHTML =
+        '<div class="vn-dialogue-tag">You asked: ' + escapeHtml(lastTurn.q) + '</div>' +
+        '<div class="vn-dialogue-text">&ldquo;' + escapeHtml(lastTurn.a) + '&rdquo;</div>';
+    }
+
+    scene.appendChild(box);
+
+    var asked = state.askedIds[student.name];
+    var remaining = QUESTIONS_PER_STUDENT - asked.length;
+    var choicesWrap = document.createElement("div");
+    choicesWrap.className = "vn-choices";
+
+    if (remaining > 0) {
+      QUESTION_BANK.forEach(function (pair) {
+        var qid = pair[0], qtext = pair[1];
+        if (asked.indexOf(qid) !== -1) return;
+        var choiceBtn = document.createElement("button");
+        choiceBtn.type = "button";
+        choiceBtn.className = "vn-choice-btn";
+        choiceBtn.textContent = qtext;
+        choiceBtn.onclick = function () {
+          var answer = randomChoice(student.responses[qid]);
+          state.askedIds[student.name].push(qid);
+          state.conversation[student.name].push({ q: qtext, a: answer });
+          render();
+        };
+        choicesWrap.appendChild(choiceBtn);
+      });
+      scene.appendChild(choicesWrap);
+    } else {
+      var advanceWrap = document.createElement("div");
+      advanceWrap.className = "vn-advance-wrap";
+      var advanceBtn = document.createElement("button");
+      advanceBtn.type = "button";
+      advanceBtn.className = "vn-advance-btn";
+      advanceBtn.textContent = (idx + 1) < total ? "Next Student" : "Open Investigation Journal";
+      advanceBtn.onclick = function () {
+        if ((idx + 1) < total) {
+          state.studentIdx += 1;
+        } else {
+          state.phase = "guessing";
+          state.journalIdx = 0;
+        }
+        render();
+      };
+      advanceWrap.appendChild(advanceBtn);
+      scene.appendChild(advanceWrap);
+    }
+
+    app.appendChild(scene);
+  }
+
+  function renderGuessing() {
+    var h2 = document.createElement("h2");
+    h2.textContent = "Investigation Journal";
+    app.appendChild(h2);
+
+    var intro = document.createElement("div");
+    intro.className = "coe-card";
+    intro.textContent = "Flip through your notes on each student, then mark your verdict on the slip at the bottom of their page.";
+    app.appendChild(intro);
+
+    var tabs = document.createElement("div");
+    tabs.className = "jr-tabs";
+    STUDENTS.forEach(function (student, i) {
+      var tab = document.createElement("button");
+      tab.type = "button";
+      var cls = "jr-tab";
+      if (i === state.journalIdx) cls += " active";
+      if (state.guesses.hasOwnProperty(student.name)) cls += " marked";
+      tab.className = cls;
+      tab.innerHTML = '<span class="jr-tab-dot"></span>' + (i + 1);
+      tab.title = student.name;
+      tab.onclick = function () {
+        state.journalIdx = i;
+        render();
+      };
+      tabs.appendChild(tab);
+    });
+    app.appendChild(tabs);
+
+    var student = STUDENTS[state.journalIdx];
+    var idx = state.journalIdx;
+    var total = STUDENTS.length;
+
+    var pagenav = document.createElement("div");
+    pagenav.className = "jr-pagenav";
+
+    var prevBtn = document.createElement("button");
+    prevBtn.type = "button";
+    prevBtn.className = "jr-pagenav-btn";
+    prevBtn.textContent = "◀ Prev";
+    prevBtn.disabled = idx === 0;
+    prevBtn.onclick = function () { state.journalIdx -= 1; render(); };
+    pagenav.appendChild(prevBtn);
+
+    var count = document.createElement("div");
+    count.className = "jr-pagenav-count";
+    count.textContent = "Page " + (idx + 1) + " of " + total;
+    pagenav.appendChild(count);
+
+    var nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "jr-pagenav-btn";
+    nextBtn.textContent = "Next ▶";
+    nextBtn.disabled = idx === total - 1;
+    nextBtn.onclick = function () { state.journalIdx += 1; render(); };
+    pagenav.appendChild(nextBtn);
+
+    app.appendChild(pagenav);
+
+    var page = document.createElement("div");
+    page.className = "jr-page";
+
+    var pageHeader = document.createElement("div");
+    pageHeader.className = "jr-page-header";
+    var portraitSm = document.createElement("div");
+    portraitSm.className = "jr-portrait-sm";
+    portraitSm.setAttribute("style", portraitStyle(idx));
+    portraitSm.textContent = initials(student.name);
+    pageHeader.appendChild(portraitSm);
+    var nameBlock = document.createElement("div");
+    nameBlock.innerHTML =
+      '<div class="jr-name">' + escapeHtml(student.name) + '</div>' +
+      '<span class="coe-class-tag">' + escapeHtml(student.className) + '</span>';
+    pageHeader.appendChild(nameBlock);
+    page.appendChild(pageHeader);
+
+    var convo = state.conversation[student.name];
+    if (convo.length === 0) {
+      var empty = document.createElement("div");
+      empty.className = "jr-transcript-empty";
+      empty.textContent = "No notes on this page yet.";
+      page.appendChild(empty);
+    } else {
+      convo.forEach(function (turn) {
+        var item = document.createElement("div");
+        item.className = "jr-transcript-item";
+        item.innerHTML =
+          '<div class="jr-transcript-q">Q: ' + escapeHtml(turn.q) + '</div>' +
+          '<div class="jr-transcript-a">' + escapeHtml(turn.a) + '</div>';
+        page.appendChild(item);
+      });
+    }
+
+    var slip = document.createElement("div");
+    slip.className = "jr-slip";
+    var slipLabel = document.createElement("div");
+    slipLabel.className = "jr-slip-label";
+    slipLabel.textContent = "Your verdict";
+    slip.appendChild(slipLabel);
+
+    var slipOptions = document.createElement("div");
+    slipOptions.className = "jr-slip-options";
+
+    var currentGuess = state.guesses[student.name];
+
+    var humanBtn = document.createElement("button");
+    humanBtn.type = "button";
+    humanBtn.className = "jr-slip-btn" + (currentGuess === false ? " selected-human" : "");
+    humanBtn.textContent = "HUMAN";
+    humanBtn.onclick = function () {
+      state.guesses[student.name] = false;
+      render();
+    };
+    slipOptions.appendChild(humanBtn);
+
+    var aiBtn = document.createElement("button");
+    aiBtn.type = "button";
+    aiBtn.className = "jr-slip-btn" + (currentGuess === true ? " selected-ai" : "");
+    aiBtn.textContent = "AI-POWERED";
+    aiBtn.onclick = function () {
+      state.guesses[student.name] = true;
+      render();
+    };
+    slipOptions.appendChild(aiBtn);
+
+    slip.appendChild(slipOptions);
+    page.appendChild(slip);
+
+    app.appendChild(page);
+
+    var markedCount = STUDENTS.filter(function (s) {
+      return state.guesses.hasOwnProperty(s.name);
+    }).length;
+
+    var submitWrap = document.createElement("div");
+    submitWrap.className = "coe-actions";
+    var submitBtn = document.createElement("button");
+    submitBtn.type = "button";
+    submitBtn.className = "coe-btn coe-btn-primary";
+    submitBtn.textContent = "Submit Final Verdict";
+    submitBtn.onclick = function () {
+      if (markedCount < total) return;
+      state.phase = "reveal";
+      render();
+    };
+    submitWrap.appendChild(submitBtn);
+    app.appendChild(submitWrap);
+
+    if (markedCount < total) {
+      var note = document.createElement("div");
+      note.className = "jr-submit-note";
+      note.textContent = markedCount + " of " + total + " pages marked - mark every page before submitting.";
+      app.appendChild(note);
+    }
+  }
+
+  function renderReveal() {
+    var summary = evaluate(STUDENTS, state.guesses);
+
+    var summaryBlock = document.createElement("div");
+    summaryBlock.className = "coe-summary";
+    summaryBlock.innerHTML =
+      '<h2 style="margin-bottom:0.2em">Case File: Closed</h2>' +
+      '<div class="score">' + summary.correct + ' / ' + summary.total + '</div>' +
+      '<div class="verdict-line">' + escapeHtml(summary.verdict) + '</div>';
+    app.appendChild(summaryBlock);
+
+    summary.results.forEach(function (result) {
+      var card = document.createElement("div");
+      card.className = "coe-card";
+
+      var verdictClass = result.correct ? "coe-verdict-correct" : "coe-verdict-wrong";
+      var verdictText = result.correct ? "CORRECT" : "WRONG";
+      var actually = result.actuallyAI ? "AI-powered" : "Rule-based (human-like) bot";
+      var guessed = result.guessedAI ? "AI-powered" : "Not AI";
+
+      var tellsHtml;
+      if (result.actuallyAI) {
+        var items = result.tells.map(function (t) {
+          return '<li class="coe-tell">' + escapeHtml(t) + '</li>';
+        }).join("");
+        tellsHtml = "<b>Tells you could have caught:</b><ul class=\"coe-tell-list\">" + items + "</ul>";
+      } else {
+        tellsHtml = "<i>No red flags - consistent personality, grounded verifiable details.</i>";
+      }
+
+      card.innerHTML =
+        '<h4 style="margin:0 0 0.4em">' + escapeHtml(result.name) +
+        ' <span class="coe-class-tag">' + escapeHtml(result.className) + '</span></h4>' +
+        'Actually: ' + actually + '<br>' +
+        'Your guess: ' + guessed + ' &rarr; <span class="' + verdictClass + '">' + verdictText + '</span>' +
+        '<br><br>' + tellsHtml;
+
+      app.appendChild(card);
+    });
+
+    var again = document.createElement("button");
+    again.className = "coe-btn coe-btn-primary";
+    again.textContent = "Play Again";
+    again.onclick = function () {
+      state = freshState();
+      render();
+    };
+    var wrap = document.createElement("div");
+    wrap.className = "coe-actions";
+    wrap.appendChild(again);
+    app.appendChild(wrap);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
