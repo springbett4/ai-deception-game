@@ -569,16 +569,41 @@
   .game-main { min-width: 0; }
   @media (max-width: 760px) {
     .game-layout { grid-template-columns: 1fr; }
-    .side-roster { order: -1; position: static; }
+    .sidebar-col { order: -1; position: static; }
   }
+
+  .sidebar-col {
+    position: sticky;
+    top: 84px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .side-description {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .side-description-title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 12px;
+  }
+  .side-description-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .side-description-name { font-size: 14px; font-weight: 800; color: var(--text-heading); }
+  .side-description-class { font-size: 11.5px; color: var(--text-faint); }
+  .side-description-text { font-size: 12.5px; color: var(--text-muted); line-height: 1.55; }
 
   .side-roster {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 16px;
-    position: sticky;
-    top: 84px;
   }
   .side-roster-title {
     font-size: 12px;
@@ -866,10 +891,10 @@
 </head>
 <body>
 <nav class="topnav">
-  <div class="brand">
+  <button type="button" class="brand" id="brandBtn" title="Back to home" aria-label="Back to home">
     <span class="brand-mark">D</span>
     <span>Class D Deception</span>
-  </div>
+  </button>
   <div class="nav-search">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     <input type="text" placeholder="Search suspects, tells, cases...">
@@ -1446,6 +1471,17 @@
   applyTheme();
 
   // -------------------------------------------------------------------------
+  // Brand/title -> back to home (keeps current progress, just like clicking
+  // a site logo doesn't erase your place in a series).
+  // -------------------------------------------------------------------------
+
+  var brandBtn = document.getElementById("brandBtn");
+  brandBtn.onclick = function () {
+    if (state.phase === "home") return;
+    go(function () { state.phase = "home"; });
+  };
+
+  // -------------------------------------------------------------------------
   // Profile icon -> stats popover
   // -------------------------------------------------------------------------
 
@@ -1501,6 +1537,16 @@
     return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   }
 
+  // Accept both "airi-kurosawa.png" (documented convention) and
+  // "airikurosawa.png" (hyphen dropped) - a very easy typo to make when
+  // dropping in art by hand, so both just work instead of silently
+  // falling back to the generated avatar.
+  function slugVariants(name) {
+    var hyphenated = slug(name);
+    var squashed = hyphenated.replace(/-/g, "");
+    return squashed === hyphenated ? [hyphenated] : [hyphenated, squashed];
+  }
+
   function gradientFor(index) {
     var pair = GRADIENTS[index % GRADIENTS.length];
     return "linear-gradient(145deg, " + pair[0] + ", " + pair[1] + ")";
@@ -1516,11 +1562,15 @@
     span.textContent = initials(name);
     el.appendChild(span);
 
+    var candidates = slugVariants(name).map(function (s) { return "images/" + s + ".png"; });
     var img = document.createElement("img");
     img.className = "portrait-img";
     img.alt = "";
-    img.src = "images/" + slug(name) + ".png";
-    img.onerror = function () { img.remove(); };
+    img.onerror = function () {
+      if (candidates.length) img.src = candidates.shift();
+      else img.remove();
+    };
+    img.src = candidates.shift();
     el.appendChild(img);
 
     return el;
@@ -1593,9 +1643,37 @@
   }
 
   // -------------------------------------------------------------------------
-  // Sidebar - persistent Asked/Not Asked roster shown alongside the
+  // Sidebar - persistent Asked/Not Asked roster, plus a description box for
+  // whichever student is currently being interviewed, shown alongside the
   // interrogate / select / notepad screens.
   // -------------------------------------------------------------------------
+
+  function renderDescriptionBox(student, index) {
+    var box = document.createElement("div");
+    box.className = "side-description";
+
+    var title = document.createElement("div");
+    title.className = "side-description-title";
+    title.textContent = "Case File";
+    box.appendChild(title);
+
+    var head = document.createElement("div");
+    head.className = "side-description-head";
+    head.appendChild(makePortraitEl(index, student.name, "mini"));
+    var nameWrap = document.createElement("div");
+    nameWrap.innerHTML =
+      '<div class="side-description-name">' + escapeHtml(student.name) + '</div>' +
+      '<div class="side-description-class">' + escapeHtml(student.className) + '</div>';
+    head.appendChild(nameWrap);
+    box.appendChild(head);
+
+    var text = document.createElement("div");
+    text.className = "side-description-text";
+    text.textContent = student.background;
+    box.appendChild(text);
+
+    return box;
+  }
 
   function renderSidebar() {
     var box = document.createElement("aside");
