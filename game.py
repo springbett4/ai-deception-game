@@ -373,38 +373,65 @@ def guessing_phase(students):
     return guesses
 
 
-def score_and_reveal(students, guesses):
-    header("Reveal")
+def evaluate(students, guesses):
+    """Score a completed round without any I/O.
+
+    Returns a list of per-student result dicts plus a summary, so both the
+    CLI and any other front-end (e.g. a Streamlit UI) can render the same
+    reveal data without duplicating the scoring logic.
+    """
+    results = []
     correct = 0
 
     for student in students:
         guessed_ai = guesses[student.name]
         actually_ai = student.is_ai
-        result = "CORRECT" if guessed_ai == actually_ai else "WRONG"
-        if guessed_ai == actually_ai:
+        is_correct = guessed_ai == actually_ai
+        if is_correct:
             correct += 1
 
-        print(f"\n{student.name} ({student.class_name})")
-        print(f"  Actually: {'AI-powered' if actually_ai else 'Rule-based (human-like) bot'}")
-        print(f"  Your guess: {'AI-powered' if guessed_ai else 'Not AI'}  -> {result}")
+        results.append(
+            {
+                "name": student.name,
+                "class_name": student.class_name,
+                "actually_ai": actually_ai,
+                "guessed_ai": guessed_ai,
+                "correct": is_correct,
+                "tells": student.tells,
+            }
+        )
 
-        if actually_ai:
+    total = len(students)
+    if correct == total:
+        verdict = "Perfect read. Not even the best AI in this class could fool you."
+    elif correct >= total // 2 + 1:
+        verdict = "Solid instincts. A few tells slipped past you, though."
+    else:
+        verdict = "The class fooled you more than you fooled them. Sharpen your ear for the tells."
+
+    return {"results": results, "correct": correct, "total": total, "verdict": verdict}
+
+
+def score_and_reveal(students, guesses):
+    header("Reveal")
+    summary = evaluate(students, guesses)
+
+    for result in summary["results"]:
+        outcome = "CORRECT" if result["correct"] else "WRONG"
+        print(f"\n{result['name']} ({result['class_name']})")
+        print(f"  Actually: {'AI-powered' if result['actually_ai'] else 'Rule-based (human-like) bot'}")
+        print(f"  Your guess: {'AI-powered' if result['guessed_ai'] else 'Not AI'}  -> {outcome}")
+
+        if result["actually_ai"]:
             print("  Tells you could have caught:")
-            for tell in student.tells:
+            for tell in result["tells"]:
                 print(f"    - {tell}")
         else:
             print("  No red flags - consistent personality, grounded verifiable details.")
         rule()
 
-    total = len(students)
-    print(f"\nFinal score: {correct}/{total}")
-
-    if correct == total:
-        print("Perfect read. Not even the best AI in this class could fool you.")
-    elif correct >= total // 2 + 1:
-        print("Solid instincts. A few tells slipped past you, though.")
-    else:
-        print("The class fooled you more than you fooled them. Sharpen your ear for the tells.")
+    print(f"\nFinal score: {summary['correct']}/{summary['total']}")
+    print(summary["verdict"])
 
 
 def main():
