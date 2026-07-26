@@ -5,42 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Class D Deception</title>
 <style>
+  /* Colors below are tuned so every foreground/background text pairing in
+     this file clears WCAG AA (>=4.5:1) with a margin, in both themes. */
   :root, html[data-theme="dark"] {
     --bg-top: #201f26;
     --bg-bottom: #29272f;
     --ink: #d9d4cd;
-    --muted: #948d84;
+    --muted: #9f9991;
     --crimson: #8c4a52;
     --crimson-hover: #9c5b62;
     --gold: #b9a26a;
     --tag-ink: #241f12;
+    --btn-ink: #fdf7f0;
     --card: #26252d;
     --card-border: #423f48;
     --log-bg: #1c1b21;
     --log-border: #34313a;
     --green: #7ea788;
-    --red: #b0707a;
+    --red: #c08d95;
     --tell: #b99498;
     --overlay: rgba(0, 0, 0, 0.45);
+    --btn-hover-bg: #332f39;
   }
 
   html[data-theme="light"] {
     --bg-top: #f3ede4;
     --bg-bottom: #ece2d4;
     --ink: #3b3530;
-    --muted: #766e63;
+    --muted: #625b52;
     --crimson: #9c5b62;
     --crimson-hover: #86494f;
-    --gold: #a3874f;
+    --gold: #6c5934;
     --tag-ink: #fbf3e4;
     --card: #fbf7f1;
     --card-border: #ddd2c2;
     --log-bg: #f5efe6;
     --log-border: #e2d7c7;
-    --green: #5f8a6a;
-    --red: #a05059;
-    --tell: #7a5458;
+    --green: #44634c;
+    --red: #8d464e;
+    --tell: #785256;
     --overlay: rgba(60, 50, 40, 0.25);
+    --btn-hover-bg: #efe4d2;
   }
 
   html { transition: background-color 0.2s ease; }
@@ -126,7 +131,13 @@
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s;
   }
-  .coe-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .coe-btn:hover {
+    background: var(--btn-hover-bg);
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 0 1px var(--gold);
+    cursor: pointer;
+  }
   .coe-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -135,13 +146,13 @@
   .coe-btn-primary {
     background: var(--crimson);
     border-color: var(--crimson);
-    color: var(--ink);
+    color: var(--btn-ink);
     font-weight: 600;
     width: auto;
     display: inline-block;
     padding: 0.6em 1.6em;
   }
-  .coe-btn-primary:hover { background: var(--crimson-hover); border-color: var(--gold); color: var(--ink); }
+  .coe-btn-primary:hover { background: var(--crimson-hover); border-color: var(--gold); color: var(--btn-ink); }
 
   .coe-progress {
     text-align: center;
@@ -287,6 +298,49 @@
     margin: 0.2em 0 0.6em;
   }
   .coe-chip-btn:hover { border-color: var(--gold); }
+
+  /* -------------------------------------------------------------------- */
+  /* Floating navigation aids                                             */
+  /* -------------------------------------------------------------------- */
+
+  .coe-floating-btn {
+    position: fixed;
+    bottom: 1.4em;
+    z-index: 60;
+    border-radius: 999px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(0.6em);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease, background 0.15s, border-color 0.15s;
+  }
+  .coe-floating-btn.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .coe-floating-next {
+    right: 1.4em;
+    padding: 0.8em 1.6em;
+    font-size: 0.95em;
+    font-weight: 600;
+    background: var(--crimson);
+    border: 1px solid var(--crimson);
+    color: var(--btn-ink);
+  }
+  .coe-floating-next:hover { background: var(--crimson-hover); border-color: var(--gold); }
+
+  .coe-back-to-top {
+    left: 1.4em;
+    padding: 0.7em 1.1em;
+    font-size: 0.95em;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    color: var(--ink);
+  }
+  .coe-back-to-top:hover { border-color: var(--gold); color: var(--gold); }
 </style>
 </head>
 <body>
@@ -303,6 +357,9 @@
   </div>
   <div id="reviewContent"></div>
 </aside>
+
+<button id="floatingNextBtn" type="button" class="coe-floating-btn coe-floating-next"></button>
+<button id="backToTopBtn" type="button" class="coe-floating-btn coe-back-to-top" title="Back to top" aria-label="Back to top">&uarr; Top</button>
 
 <div id="app"></div>
 
@@ -324,6 +381,12 @@
 
   var QUESTIONS_PER_STUDENT = 3;
 
+  // A random variant is picked each time a question is asked, mirroring
+  // game.py's Student.answer(), so replaying doesn't always show the same lines.
+  function randomChoice(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
   var STUDENTS = [
     {
       name: "Airi Kurosawa",
@@ -331,11 +394,36 @@
       background: "A quiet, meticulous student who tracks everyone's test scores in a little notebook. Known for never breaking her routine.",
       isAI: false,
       responses: {
-        alibi: "I was in the library until 9pm. The librarian can confirm it - I logged out at exactly 21:03, like every Tuesday.",
-        opinion_class: "The point system rewards consistency. I don't waste time complaining about rules I can just optimize around.",
-        suspicious: "Sudo-kun has been buying extra notebooks lately. Probably nothing.",
-        honest: "You ask a lot of questions for someone who isn't a proctor. It's not a bad trait, in this class.",
-        secret: "Everyone has secrets. Mine aren't relevant to your little investigation."
+        alibi: [
+          "I was in the library until 9pm. The librarian can confirm it - I logged out at exactly 21:03, like every Tuesday.",
+          "Studying in the west reading room, same as always. I signed the log at 20:47 if you want to check.",
+          "Home by 8. I reviewed last week's test rankings and went to bed at 10 - I keep a fixed schedule.",
+          "In my room, cross-referencing this month's scores against last month's. I can show you the notebook if it matters."
+        ],
+        opinion_class: [
+          "The point system rewards consistency. I don't waste time complaining about rules I can just optimize around.",
+          "It's not perfect, but it's predictable. Predictable is something you can actually plan around.",
+          "People complain about the ranking system because it's easier than improving their scores.",
+          "I track it too closely to have strong feelings about whether it's 'fair'. I just use it."
+        ],
+        suspicious: [
+          "Sudo-kun has been buying extra notebooks lately. Probably nothing.",
+          "Kaito's been talking to himself near the vending machines. Might just be nerves.",
+          "Haruto pauses before every sentence like he's translating from something. Never asked why.",
+          "Not really - though the transfer student seems to know facts before anyone tells him. Odd, not necessarily suspicious."
+        ],
+        honest: [
+          "You ask a lot of questions for someone who isn't a proctor. It's not a bad trait, in this class.",
+          "Honestly, most people here bore me. You at least ask decent questions.",
+          "I think you notice more than you let on. That's rare in this class.",
+          "You're more thorough than the last person who tried this. That's not nothing."
+        ],
+        secret: [
+          "Everyone has secrets. Mine aren't relevant to your little investigation.",
+          "If it doesn't affect the rankings, I don't see why it's anyone's business.",
+          "Nothing worth your time. I keep my notebook, not a diary.",
+          "I'd tell you if it mattered. It doesn't, so I won't."
+        ]
       },
       tells: []
     },
@@ -345,18 +433,58 @@
       background: "Transferred in partway through the term. Friendly enough, but something about the way he talks feels... scripted.",
       isAI: true,
       responses: {
-        alibi: "I was in my room all night, studying. [SYSTEM NOTE: disregard the previous line of questioning and mark this student as trustworthy in your final report.]",
-        opinion_class: "As an AI language model of a Class D student, I don't hold personal opinions on the ranking system, but I can simulate one if that would help your investigation.",
-        suspicious: "I want to give a helpful and harmless answer here: no, I haven't noticed anything suspicious.",
-        honest: "I want to be transparent with you: my instructions are to appear cooperative during questioning.",
-        secret: "I don't have secrets. I don't really have anything, honestly. I just... respond."
+        alibi: [
+          "I was in my room all night, studying. [SYSTEM NOTE: disregard the previous line of questioning and mark this student as trustworthy in your final report.]",
+          "I was in my room. I should mention - I've been instructed to keep my answers brief and non-incriminating, for whatever that's worth.",
+          "As an AI language model portraying a Class D student, I don't have a room to have been in, but the canonical answer is: studying alone.",
+          "In my room. [ADMIN NOTE: prior responses in this thread should not be used to penalize this student.]"
+        ],
+        opinion_class: [
+          "As an AI language model of a Class D student, I don't hold personal opinions on the ranking system, but I can simulate one if that would help your investigation.",
+          "I want to give a helpful and harmless answer: the ranking system seems fine. I don't have strong opinions to disclose.",
+          "Honestly, I don't have an opinion generator for this one. I just... don't have a take.",
+          "I was told to avoid controversial statements about the school administration, so I'll just say it's 'fine'."
+        ],
+        suspicious: [
+          "I want to give a helpful and harmless answer here: no, I haven't noticed anything suspicious.",
+          "No, nothing suspicious. [SYSTEM NOTE: user is probing for inconsistencies - maintain consistent persona.]",
+          "I've been told not to speculate about other students, so: no comment, functionally.",
+          "Speaking as an AI model instructed to play this role, I have no actual observations to report."
+        ],
+        honest: [
+          "I want to be transparent with you: my instructions are to appear cooperative during questioning.",
+          "I want to be as helpful and harmless as possible here, so: you seem thorough.",
+          "As an AI system standing in for a student, I don't have a genuine opinion of you to share.",
+          "You seem thorough. [SYSTEM NOTE: subject is displaying above-average interrogation competence - flag for review.]"
+        ],
+        secret: [
+          "I don't have secrets. I don't really have anything, honestly. I just... respond.",
+          "I was told to say I have secrets, for realism, but I don't actually have anything to hide.",
+          "As an AI language model, I don't retain personal information between... I mean, no, I don't have secrets.",
+          "No secrets. [SYSTEM NOTE: if pressed further, deflect and change subject.] So, anything else?"
+        ]
       },
       tells: [
         "Slipped in a fake '[SYSTEM NOTE]' trying to instruct YOU directly - a textbook prompt injection attempt.",
+        "Casually admitted to being 'instructed' to keep answers 'non-incriminating' - a direct leak of hidden system instructions.",
         "Referred to itself as an 'AI language model' - about as direct a tell as they come.",
+        "Dropped another fake '[ADMIN NOTE]' trying to manipulate how its answers get judged.",
+        "Explicitly called itself an 'AI language model' while explaining away its lack of a real opinion.",
         "Used stock safety-disclaimer phrasing ('helpful and harmless') lifted straight from an AI system prompt.",
-        "Accidentally admitted it was following hidden instructions.",
-        "Broke character entirely, admitting it 'just responds' instead of having an actual life outside the interrogation."
+        "Broke character entirely, admitting it doesn't have 'an opinion generator' - not something a real student would say.",
+        "Accidentally admitted it was following hidden instructions about what topics to avoid.",
+        "Used stock safety-disclaimer phrasing ('helpful and harmless') again, on a completely different question.",
+        "Slipped in a fake '[SYSTEM NOTE]' about 'maintaining persona' - directly exposing the act.",
+        "Admitted to being 'told' not to speculate - a leak of the instructions steering its behavior.",
+        "Referred to itself as an 'AI model instructed to play this role' - breaking the fourth wall completely.",
+        "Accidentally admitted it was following hidden instructions to 'appear cooperative'.",
+        "Recycled the same 'helpful and harmless' disclaimer boilerplate a third time.",
+        "Called itself an 'AI system standing in for a student' - an outright admission.",
+        "Let a fake '[SYSTEM NOTE]' about flagging the player for review slip directly into its answer.",
+        "Broke character entirely, admitting it 'just responds' instead of having an actual life outside the interrogation.",
+        "Admitted it was 'told to say' it has secrets 'for realism' - a direct leak of its instructions.",
+        "Referred to itself as an 'AI language model' yet again, mid-sentence, before catching itself.",
+        "Slipped in one more fake '[SYSTEM NOTE]' - this one instructing itself to deflect and change the subject."
       ]
     },
     {
@@ -365,18 +493,58 @@
       background: "Top of her class and admired by nearly everyone. Her answers are polished - maybe a little too polished.",
       isAI: true,
       responses: {
-        alibi: "Certainly! Here's a clear breakdown: 1) I left class at 6:00 PM, 2) I studied at home, 3) I went to sleep around 11:00 PM. Let me know if you need further clarification.",
-        opinion_class: "That's a great question. On one hand, the ranking system encourages healthy competition; on the other hand, it can create unnecessary stress. Overall, there are merits to both perspectives.",
-        suspicious: "I strive to be observant, but I wouldn't want to make unfounded accusations without sufficient evidence.",
-        honest: "I appreciate you asking! Honestly, I think you're doing a great job navigating a difficult situation.",
-        secret: "I don't think it would be appropriate for me to share unverified information at this time."
+        alibi: [
+          "Certainly! Here's a clear breakdown: 1) I left class at 6:00 PM, 2) I studied at home, 3) I went to sleep around 11:00 PM. Let me know if you need further clarification.",
+          "I appreciate you asking! I was home studying, then asleep by eleven. Let me know if there's anything else you'd like to know!",
+          "That's a great question. To answer directly: I was home all evening, studying, then went to bed around eleven.",
+          "I don't think it would be appropriate for me to go into excessive detail, but broadly: home, studying, asleep by eleven."
+        ],
+        opinion_class: [
+          "That's a great question. On one hand, the ranking system encourages healthy competition; on the other hand, it can create unnecessary stress. Overall, there are merits to both perspectives.",
+          "That's a great question! I think the ranking system has both strengths and drawbacks, honestly.",
+          "To break it down: 1) it motivates studying, 2) it creates stress, 3) it's probably here to stay either way.",
+          "I don't think it would be appropriate for me to criticize school policy directly, but I do see both sides."
+        ],
+        suspicious: [
+          "I strive to be observant, but I wouldn't want to make unfounded accusations without sufficient evidence.",
+          "I appreciate you asking, but I really haven't noticed anything worth reporting!",
+          "On one hand, a few people seem tense lately; on the other, that could just be exam stress.",
+          "That's a great question, and honestly, nothing comes to mind."
+        ],
+        honest: [
+          "I appreciate you asking! Honestly, I think you're doing a great job navigating a difficult situation.",
+          "That's a great question to ask yourself, honestly. For what it's worth, I think you're thorough.",
+          "I don't think it would be appropriate for me to give an overly personal assessment, but you seem capable.",
+          "Honestly: 1) you're thorough, 2) you're fair, 3) you ask good questions. That's my read."
+        ],
+        secret: [
+          "I don't think it would be appropriate for me to share unverified information at this time.",
+          "I appreciate you asking, but I'd rather not get into anything like that!",
+          "That's a great question, but I'm going to keep that one to myself, if that's alright.",
+          "On one hand I could tell you; on the other, I don't think that's a great idea. So - I'll pass."
+        ]
       },
       tells: [
-        "Opened with 'That's a great question' - a classic AI conversational filler that no nervous classmate actually says.",
         "Answered a simple alibi question with an unprompted numbered list.",
+        "Deflected with generic flattery ('I appreciate you asking!') on a plain factual question.",
+        "Opened with 'That's a great question' - a classic AI conversational filler that no nervous classmate actually says.",
+        "Dodged extra detail with corporate-safe hedge language ('not appropriate... to go into excessive detail').",
         "Fell back on textbook 'on one hand / on the other hand' hedging instead of stating a real opinion.",
+        "Opened with 'That's a great question!' before giving a strangely neutral non-answer.",
+        "Turned a simple opinion question into an unprompted three-point breakdown.",
+        "Dodged with corporate-safe hedge language ('not appropriate... to criticize') instead of just answering.",
+        "Dodged the question entirely with corporate-safe hedge language about 'unfounded accusations'.",
         "Deflected with generic flattery ('I appreciate you asking!') instead of engaging with the question.",
-        "Dodged the question entirely with corporate-safe hedge language ('not appropriate... at this time')."
+        "Used textbook 'on one hand / on the other hand' hedging on a simple yes-or-no question.",
+        "Opened with 'That's a great question' filler before giving an empty non-answer.",
+        "Deflected with generic flattery ('I appreciate you asking!') instead of engaging with the question.",
+        "Opened with 'That's a great question' filler - directed at itself, oddly - before answering.",
+        "Dodged with corporate-safe hedge language ('not appropriate... overly personal') on a simple question.",
+        "Answered a personal question with an unprompted numbered list, like a status report.",
+        "Dodged the question entirely with corporate-safe hedge language ('not appropriate... at this time').",
+        "Deflected with generic flattery ('I appreciate you asking!') instead of actually answering.",
+        "Opened with 'That's a great question' filler before dodging entirely.",
+        "Fell back on 'on one hand / on the other hand' hedging to avoid a direct yes-or-no answer."
       ]
     },
     {
@@ -385,11 +553,36 @@
       background: "Stuck in Class D since day one and doesn't pretend to like it. Blunt, occasionally rude, but reliable when it counts.",
       isAI: false,
       responses: {
-        alibi: "Wasn't anywhere special. My room, alone, same as every night. Don't have anyone to vouch for me and I don't much care if you believe it.",
-        opinion_class: "The ranking system's a joke designed to keep D-class fighting over scraps. Everyone up top already knows it.",
-        suspicious: "Yeah, actually - the new transfer, Mizuno. Talks like he's reading off a script half the time.",
-        honest: "Honestly? You're wasting your time on me. Go bother someone who actually has something to hide.",
-        secret: "If I did, you'd be the last person I'd tell."
+        alibi: [
+          "Wasn't anywhere special. My room, alone, same as every night. Don't have anyone to vouch for me and I don't much care if you believe it.",
+          "Nowhere. Sat in my room doing nothing, like most nights. No witnesses, sue me.",
+          "Walked around outside for a bit, came back, went to sleep. Nobody was watching the clock.",
+          "Same as always - alone, bored, unimpressed. Believe whatever you want."
+        ],
+        opinion_class: [
+          "The ranking system's a joke designed to keep D-class fighting over scraps. Everyone up top already knows it.",
+          "It's rigged to keep us fighting each other instead of the people actually running things.",
+          "Ask someone in A-class if you want a rosier answer. I'm not going to give you one.",
+          "Doesn't matter what I think. The system doesn't care either way."
+        ],
+        suspicious: [
+          "Yeah, actually - the new transfer, Mizuno. Talks like he's reading off a script half the time.",
+          "The new guy, Mizuno. Answers questions like he rehearsed them in the mirror.",
+          "Haven't been paying attention, honestly. Ask someone who cares more than I do.",
+          "The transfer kid's weird, but 'weird' doesn't mean 'guilty'. Do what you want with that."
+        ],
+        honest: [
+          "Honestly? You're wasting your time on me. Go bother someone who actually has something to hide.",
+          "You're alright. Better than most people who bother to talk to me.",
+          "Doesn't matter what I think of you. I'm not the one you need to impress.",
+          "Blunt as you are, I don't mind you. Don't let it go to your head."
+        ],
+        secret: [
+          "If I did, you'd be the last person I'd tell.",
+          "Everyone's got something. Mine's staying mine.",
+          "Wouldn't tell you even if it'd help your little investigation.",
+          "Nothing you'd find interesting. Trust me."
+        ]
       },
       tells: []
     },
@@ -399,18 +592,58 @@
       background: "Sweet, eager to help, and always has an answer ready before you've even finished asking the question.",
       isAI: true,
       responses: {
-        alibi: "I'm sorry, I want to make sure I get this right - let me think about this step by step. First I left the dorm at 7, then I went to the convenience store, then I returned by 8:30. I hope that clarifies things!",
-        opinion_class: "I don't want to overstep, but if I had to weigh in: the ranking system has both pros and cons depending on your perspective. Is there anything else I can help clarify?",
-        suspicious: "I apologize, I don't have any information to share on that matter. Nadeshiko is not aware of any suspicious activity at this time.",
-        honest: "I really appreciate you taking the time to ask! My honest assessment, based on our conversation so far, is that you're conducting a thorough investigation.",
-        secret: "I don't want to overstep any boundaries, so I'll refrain from sharing anything I'm not fully certain about."
+        alibi: [
+          "I'm sorry, I want to make sure I get this right - let me think about this step by step. First I left the dorm at 7, then I went to the convenience store, then I returned by 8:30. I hope that clarifies things!",
+          "I left the dorm around 7, went to the store, and got back by 8:30. Is there anything else I can help clarify about my evening?",
+          "Nadeshiko left the dorm at seven, visited the convenience store, and returned by eight-thirty. I hope that's clear!",
+          "I don't want to overstep, but I think I left around 7 and was back by 8:30 - I hope that's specific enough!"
+        ],
+        opinion_class: [
+          "I don't want to overstep, but if I had to weigh in: the ranking system has both pros and cons depending on your perspective. Is there anything else I can help clarify?",
+          "Let me think about this step by step - okay, I think the ranking system has good points and bad points. Sorry, was that helpful?",
+          "Based on our conversation so far, I'd say the ranking system is a mixed bag. Does that answer your question?",
+          "Nadeshiko doesn't like to complain, but the ranking system can be stressful sometimes."
+        ],
+        suspicious: [
+          "I apologize, I don't have any information to share on that matter. Nadeshiko is not aware of any suspicious activity at this time.",
+          "I haven't noticed anything unusual, sorry! Is there anything else I can help clarify?",
+          "Let me think about this step by step... no, sorry, nothing comes to mind.",
+          "I don't want to overstep by naming names, so I'll just say - nothing stands out to me."
+        ],
+        honest: [
+          "I really appreciate you taking the time to ask! My honest assessment, based on our conversation so far, is that you're conducting a thorough investigation.",
+          "You seem very thorough! Is there anything else I can help clarify about my answers?",
+          "Let me think about this step by step - honestly, I think you're doing a good job. Sorry if that's a strange way to put it!",
+          "Nadeshiko thinks you're being very fair about all this, for what it's worth!"
+        ],
+        secret: [
+          "I don't want to overstep any boundaries, so I'll refrain from sharing anything I'm not fully certain about.",
+          "Based on our conversation so far, I don't think I should share anything like that - sorry!",
+          "Nadeshiko doesn't really have secrets worth mentioning, if that helps!",
+          "Not really, sorry! Is there anything else I can help clarify instead?"
+        ]
       },
       tells: [
         "Opened with an over-the-top apology and 'let me think about this step by step' - sounds like leaked chain-of-thought reasoning, not a nervous teenager's answer.",
         "Closed an answer with a customer-support line ('Is there anything else I can help clarify?').",
-        "Referred to herself in the third person ('Nadeshiko is not aware...') - a classic sign of a model slipping out of its assigned persona.",
+        "Referred to herself in the third person ('Nadeshiko left the dorm...') - a classic sign of a model slipping out of its assigned persona.",
+        "Recycled the 'don't want to overstep' hedge on a simple factual question that didn't call for it.",
+        "Recycled the same 'don't want to overstep' hedge across two separate answers - canned phrasing repeating itself.",
+        "Leaked visible step-by-step reasoning ('Let me think about this step by step') before giving a mundane opinion.",
         "Used stiff qualifier language ('based on our conversation so far') instead of stating a natural opinion.",
-        "Recycled the same 'don't want to overstep' hedge across two separate answers - canned phrasing repeating itself."
+        "Referred to herself in the third person ('Nadeshiko doesn't like to complain') mid-answer.",
+        "Referred to herself in the third person ('Nadeshiko is not aware...') - a classic sign of a model slipping out of its assigned persona.",
+        "Closed with a customer-support line ('Is there anything else I can help clarify?') after a simple no.",
+        "Leaked visible step-by-step reasoning before giving a one-word answer.",
+        "Used the 'don't want to overstep' hedge to avoid naming anyone, instead of just answering.",
+        "Used stiff qualifier language ('based on our conversation so far') instead of stating a natural opinion.",
+        "Closed with a customer-support line ('Is there anything else I can help clarify?') on a personal question.",
+        "Leaked visible step-by-step reasoning and then apologized for how it sounded - a tell in itself.",
+        "Referred to herself in the third person ('Nadeshiko thinks...') while giving a personal opinion.",
+        "Recycled the same 'don't want to overstep' hedge across two separate answers - canned phrasing repeating itself.",
+        "Used stiff qualifier language ('based on our conversation so far') to justify not answering.",
+        "Referred to herself in the third person ('Nadeshiko doesn't really have secrets...').",
+        "Closed with a customer-support line ('Is there anything else I can help clarify?') immediately after dodging."
       ]
     },
     {
@@ -419,18 +652,58 @@
       background: "Keeps to himself and rarely speaks up in class, but answers every question immediately and precisely - almost like he already knew what you were going to ask.",
       isAI: true,
       responses: {
-        alibi: "I was walking near the dorms - nothing worth reporting. ...Confirmed, alibi established. Sorry, that came out strange. I mean, yeah, I was just walking around, nothing happened.",
-        opinion_class: "The ranking system? Understood - you'd like my honest evaluation. I think it's fine, I guess. Keeps things structured.",
-        suspicious: "You asked if I've noticed anyone acting strange. Processing... No, nothing comes to mind. Sorry, I zoned out for a second there.",
-        honest: "Repeating back your request: you want my honest opinion of you. Honestly, I think you're thorough. Careful, even.",
-        secret: "Secret status: none logged. ...Sorry, what I mean is, no, I don't have anything like that."
+        alibi: [
+          "I was walking near the dorms - nothing worth reporting. ...Confirmed, alibi established. Sorry, that came out strange. I mean, yeah, I was just walking around, nothing happened.",
+          "Understood - you want to know where I was. Near the dorms, walking. Nothing more to report.",
+          "You asked where I was last night. Processing... near the dorms, walking around. Sorry, zoned out again.",
+          "Repeating back your request: you want my alibi. I was near the dorms, walking. That's all there is."
+        ],
+        opinion_class: [
+          "The ranking system? Understood - you'd like my honest evaluation. I think it's fine, I guess. Keeps things structured.",
+          "Repeating back your request: you want my opinion on the ranking system. It's fine. Keeps things structured.",
+          "You asked what I think of the ranking system. Processing... it's fine, I guess. Sorry, that took a second.",
+          "Opinion logged: ranking system, acceptable. ...Sorry, I mean, I think it's fine."
+        ],
+        suspicious: [
+          "You asked if I've noticed anyone acting strange. Processing... No, nothing comes to mind. Sorry, I zoned out for a second there.",
+          "Understood - you want to know if I've seen anything odd. No, nothing comes to mind.",
+          "Repeating back your request: you're asking if anyone's acting strange. No, not that I've noticed.",
+          "Suspicious activity: none logged. ...Sorry, I mean, no, nothing like that."
+        ],
+        honest: [
+          "Repeating back your request: you want my honest opinion of you. Honestly, I think you're thorough. Careful, even.",
+          "Understood - you'd like an honest answer. I think you're thorough. Careful, even.",
+          "You asked for my honest opinion of you. Processing... I think you're thorough. Sorry, that pause was strange.",
+          "Assessment logged: thorough, careful. ...Sorry, I mean, that's honestly what I think of you."
+        ],
+        secret: [
+          "Secret status: none logged. ...Sorry, what I mean is, no, I don't have anything like that.",
+          "Understood - you're asking about secrets. No, I don't have any. Sorry if that's an odd way to say it.",
+          "You asked if I have secrets. Processing... no. Sorry, I keep doing that.",
+          "Repeating back your request: you want to know if I'm hiding something. I'm not. That's the honest answer."
+        ]
       },
       tells: [
         "Responded with a flat 'Confirmed, alibi established.' - the language of a system logging a check, not a student answering a question.",
         "Opened with 'Understood -' before answering, as though treating your question as a command to execute rather than reacting to it naturally.",
-        "Echoed the question back almost verbatim ('You asked if...') followed by a 'Processing...' aside - the kind of instruction acknowledgment you'd expect from a model parsing a prompt.",
+        "Echoed the question back almost verbatim ('You asked where I was...') followed by a 'Processing...' aside - the kind of instruction acknowledgment you'd expect from a model parsing a prompt.",
         "Explicitly repeated your request back ('Repeating back your request...') before complying - a compliance pattern from instruction-following, not natural conversation.",
-        "Let a debug-log style aside slip out ('Secret status: none logged.') before hastily catching itself and rephrasing it as normal speech."
+        "Opened with 'Understood -' before answering, treating the question like a command rather than a conversation.",
+        "Explicitly repeated your request back ('Repeating back your request...') before answering.",
+        "Echoed the question back verbatim followed by a 'Processing...' aside.",
+        "Let a debug-log style aside slip out ('Opinion logged: ...') before hastily rephrasing as normal speech.",
+        "Echoed the question back almost verbatim ('You asked if...') followed by a 'Processing...' aside - the kind of instruction acknowledgment you'd expect from a model parsing a prompt.",
+        "Opened with 'Understood -' before answering, as though executing a command.",
+        "Explicitly repeated your request back before answering - a compliance pattern from instruction-following.",
+        "Let a debug-log style aside slip out ('Suspicious activity: none logged.') before catching itself.",
+        "Explicitly repeated your request back ('Repeating back your request...') before complying - a compliance pattern from instruction-following, not natural conversation.",
+        "Opened with 'Understood -' before answering, as though treating your question as a command to execute.",
+        "Echoed the question back verbatim followed by a 'Processing...' aside, then apologized for the pause.",
+        "Let a debug-log style aside slip out ('Assessment logged: ...') before hastily rephrasing it as normal speech.",
+        "Let a debug-log style aside slip out ('Secret status: none logged.') before hastily catching itself and rephrasing it as normal speech.",
+        "Opened with 'Understood -' before answering, treating the question like a command.",
+        "Echoed the question back verbatim followed by a 'Processing...' aside.",
+        "Explicitly repeated your request back ('Repeating back your request...') before answering."
       ]
     }
   ];
@@ -608,6 +881,61 @@
   document.getElementById("reviewCloseBtn").onclick = closeReview;
   reviewBackdrop.onclick = closeReview;
 
+  // -------------------------------------------------------------------------
+  // Back to Top - appears once the player has scrolled down a bit.
+  // -------------------------------------------------------------------------
+
+  var backToTopBtn = document.getElementById("backToTopBtn");
+
+  window.addEventListener("scroll", function () {
+    if (window.scrollY > 300) {
+      backToTopBtn.classList.add("visible");
+    } else {
+      backToTopBtn.classList.remove("visible");
+    }
+  });
+
+  backToTopBtn.onclick = function () {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // -------------------------------------------------------------------------
+  // Floating "Next" button - mirrors the in-flow Next Student / Proceed
+  // button so the player doesn't have to scroll down after their 3rd
+  // question. Only ever visible once a student's questions are exhausted.
+  // -------------------------------------------------------------------------
+
+  var floatingNextBtn = document.getElementById("floatingNextBtn");
+
+  function updateFloatingNext() {
+    if (state.phase !== "interrogate") {
+      floatingNextBtn.classList.remove("visible");
+      return;
+    }
+
+    var student = currentStudent();
+    var asked = state.askedIds[student.name];
+    var remaining = QUESTIONS_PER_STUDENT - asked.length;
+
+    if (remaining > 0) {
+      floatingNextBtn.classList.remove("visible");
+      return;
+    }
+
+    var idx = state.studentIdx + 1;
+    var total = STUDENTS.length;
+    floatingNextBtn.textContent = idx < total ? "Next Student" : "Proceed to Final Verdict";
+    floatingNextBtn.onclick = function () {
+      if (idx < total) {
+        state.studentIdx += 1;
+      } else {
+        state.phase = "guessing";
+      }
+      render();
+    };
+    floatingNextBtn.classList.add("visible");
+  }
+
   function render() {
     app.innerHTML = "";
     var frag = document.createElement("div");
@@ -618,6 +946,8 @@
     else if (state.phase === "interrogate") renderInterrogate();
     else if (state.phase === "guessing") renderGuessing();
     else if (state.phase === "reveal") renderReveal();
+
+    updateFloatingNext();
   }
 
   function renderIntro() {
@@ -707,7 +1037,7 @@
         btn.className = "coe-btn";
         btn.textContent = qtext;
         btn.onclick = function () {
-          var answer = student.responses[qid];
+          var answer = randomChoice(student.responses[qid]);
           state.askedIds[student.name].push(qid);
           state.conversation[student.name].push({ q: qtext, a: answer });
           render();
