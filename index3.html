@@ -1,67 +1,170 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI or Not? A Class Interview Quiz</title>
 <style>
+  /* Plain, generic-quiz-site palette. No thematic gradients/glow - just a
+     light and a dark variant of the same flat layout. Values are tuned so
+     every text/background pairing clears WCAG AA (>=4.5:1) in both modes. */
+  :root, html[data-theme="light"] {
+    --bg-page-a: #f7f8fa;
+    --bg-page-b: #eef0f3;
+    --dot-color: rgba(0, 0, 0, 0.05);
+    --bg-card: #ffffff;
+    --text-primary: #1f2328;
+    --text-heading: #111827;
+    --text-muted: #6b7280;
+    --border: #e2e5e9;
+    --input-border: #d1d5db;
+    --divider: #eceff2;
+    --surface-muted: #f9fafb;
+    --surface-muted-border: #e5e7eb;
+    --option-hover-bg: #f3f4f6;
+    --option-hover-border: #c0c5cc;
+    --selected-bg: #eaf2ff;
+    --selected-text: #1d4ed8;
+    --success: #15803d;
+    --danger: #dc2626;
+    --disabled-bg: #9ca3af;
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  html[data-theme="dark"] {
+    --bg-page-a: #1c1e23;
+    --bg-page-b: #121317;
+    --dot-color: rgba(255, 255, 255, 0.045);
+    --bg-card: #1f2229;
+    --text-primary: #e5e7eb;
+    --text-heading: #f3f4f6;
+    --text-muted: #9aa1ab;
+    --border: #33373f;
+    --input-border: #454b55;
+    --divider: #2b2f37;
+    --surface-muted: #2a2e35;
+    --surface-muted-border: #383d46;
+    --option-hover-bg: #262a31;
+    --option-hover-border: #4a505a;
+    --selected-bg: #16233d;
+    --selected-text: #8ab4ff;
+    --success: #4ade80;
+    --danger: #f87171;
+    --disabled-bg: #454b55;
+    --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Accent blue stays the same brand color in both themes; only surfaces,
+     text, and borders shift between light and dark. */
+  :root {
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-text: #ffffff;
+  }
+
   * { box-sizing: border-box; }
+
+  html { transition: background-color 0.2s ease; }
 
   body {
     margin: 0;
     min-height: 100vh;
-    background: #f4f5f7;
-    color: #1f2328;
+    background:
+      radial-gradient(var(--dot-color) 1px, transparent 1px),
+      linear-gradient(160deg, var(--bg-page-a) 0%, var(--bg-page-b) 100%);
+    background-size: 22px 22px, 100% 100%;
+    background-attachment: fixed;
+    color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     line-height: 1.5;
   }
 
+  .toolbar {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+  }
+  .theme-toggle-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1px solid var(--input-border);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: var(--card-shadow);
+  }
+  .theme-toggle-btn:hover { border-color: var(--accent); }
+  .theme-toggle-btn svg { width: 18px; height: 18px; }
+
   .quiz-container {
     max-width: 640px;
     margin: 40px auto;
-    background: #ffffff;
-    border: 1px solid #e2e5e9;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 32px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--card-shadow);
   }
 
   h1 {
     font-size: 20px;
     margin: 0 0 24px;
     text-align: center;
-    color: #111827;
+    color: var(--text-heading);
   }
 
   .progress-wrap { margin-bottom: 24px; }
   .progress-label {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-bottom: 6px;
   }
   .progress-bar-track {
     height: 8px;
-    background: #e5e7eb;
+    background: var(--divider);
     border-radius: 4px;
     overflow: hidden;
   }
   .progress-bar-fill {
     height: 100%;
-    background: #2563eb;
+    background: var(--accent);
     transition: width 0.2s ease;
   }
 
   .q-student-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 13px;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-bottom: 4px;
   }
   .q-title {
     font-size: 19px;
     font-weight: 600;
     margin: 0 0 20px;
-    color: #111827;
+    color: var(--text-heading);
   }
+
+  .avatar {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .avatar-lg { width: 34px; height: 34px; font-size: 13px; }
 
   .option-list {
     display: flex;
@@ -72,54 +175,67 @@
   .option-btn {
     text-align: left;
     padding: 12px 16px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--input-border);
     border-radius: 6px;
-    background: #ffffff;
+    background: var(--bg-card);
     font-size: 15px;
-    color: #1f2328;
+    color: var(--text-primary);
     cursor: pointer;
     font-family: inherit;
   }
-  .option-btn:hover { background: #f3f4f6; border-color: #c0c5cc; }
+  .option-btn:hover { background: var(--option-hover-bg); border-color: var(--option-hover-border); }
   .option-btn.selected {
-    background: #eaf2ff;
-    border-color: #2563eb;
-    color: #1d4ed8;
+    background: var(--selected-bg);
+    border-color: var(--accent);
+    color: var(--selected-text);
     font-weight: 500;
   }
 
   .primary-btn {
     padding: 10px 22px;
-    background: #2563eb;
-    color: #ffffff;
+    background: var(--accent);
+    color: var(--accent-text);
     border: none;
     border-radius: 6px;
     font-size: 15px;
     cursor: pointer;
     font-family: inherit;
   }
-  .primary-btn:hover { background: #1d4ed8; }
-  .primary-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+  .primary-btn:hover { background: var(--accent-hover); }
+  .primary-btn:disabled { background: var(--disabled-bg); cursor: not-allowed; }
+
+  .secondary-btn {
+    padding: 10px 22px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+    font-family: inherit;
+    margin-right: 10px;
+  }
+  .secondary-btn:hover { background: var(--option-hover-bg); border-color: var(--option-hover-border); }
 
   .btn-row { text-align: right; }
   .btn-row.center { text-align: center; }
 
   .reveal-tag {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-bottom: 6px;
   }
   .reveal-answer {
     font-size: 15px;
     line-height: 1.6;
     padding: 16px;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    background: var(--surface-muted);
+    border: 1px solid var(--surface-muted-border);
     border-radius: 6px;
     margin-bottom: 20px;
   }
 
-  .intro-text { font-size: 15px; color: #374151; margin-bottom: 24px; }
+  .intro-text { font-size: 15px; color: var(--text-primary); margin-bottom: 24px; }
 
   .guess-row {
     display: flex;
@@ -127,42 +243,44 @@
     align-items: center;
     gap: 12px;
     padding: 14px 0;
-    border-bottom: 1px solid #eceff2;
+    border-bottom: 1px solid var(--divider);
   }
-  .guess-name { font-size: 15px; font-weight: 500; color: #111827; }
-  .guess-class { font-size: 13px; color: #6b7280; font-weight: 400; }
+  .guess-name-row { display: flex; align-items: center; gap: 8px; }
+  .guess-name { font-size: 15px; font-weight: 500; color: var(--text-heading); }
+  .guess-class { font-size: 13px; color: var(--text-muted); font-weight: 400; }
   .guess-toggle { display: flex; gap: 8px; flex: 0 0 auto; }
   .toggle-btn {
     padding: 8px 14px;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--input-border);
     border-radius: 6px;
-    background: #ffffff;
+    background: var(--bg-card);
     font-size: 13px;
     cursor: pointer;
     font-family: inherit;
+    color: var(--text-primary);
   }
-  .toggle-btn:hover { background: #f3f4f6; }
-  .toggle-btn.selected { background: #2563eb; border-color: #2563eb; color: #ffffff; }
+  .toggle-btn:hover { background: var(--option-hover-bg); }
+  .toggle-btn.selected { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 
-  .guess-note { font-size: 13px; color: #6b7280; text-align: center; margin-top: 16px; }
+  .guess-note { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 16px; }
 
   .score-banner {
     text-align: center;
     font-size: 30px;
     font-weight: 700;
     margin-bottom: 6px;
-    color: #111827;
+    color: var(--text-heading);
   }
   .verdict-text {
     text-align: center;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-bottom: 28px;
     font-size: 14px;
   }
 
   .result-row {
     padding: 14px 0;
-    border-bottom: 1px solid #eceff2;
+    border-bottom: 1px solid var(--divider);
   }
   .result-head {
     display: flex;
@@ -170,16 +288,35 @@
     align-items: baseline;
     margin-bottom: 6px;
   }
-  .result-name { font-size: 15px; font-weight: 600; color: #111827; }
-  .result-tag-correct { color: #15803d; font-weight: 600; font-size: 13px; }
-  .result-tag-incorrect { color: #dc2626; font-weight: 600; font-size: 13px; }
-  .result-detail { font-size: 13px; color: #6b7280; margin-bottom: 6px; }
-  .result-tells { font-size: 13px; color: #374151; }
+  .result-name-row { display: flex; align-items: center; gap: 8px; }
+  .result-name { font-size: 15px; font-weight: 600; color: var(--text-heading); }
+  .result-tag-correct { color: var(--success); font-weight: 600; font-size: 13px; }
+  .result-tag-incorrect { color: var(--danger); font-weight: 600; font-size: 13px; }
+  .result-detail { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+  .result-tells { font-size: 13px; color: var(--text-primary); }
   .result-tells ul { margin: 4px 0 0; padding-left: 18px; }
   .result-tells li { margin-bottom: 3px; }
+
+  .review-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--divider);
+  }
+  .review-item-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .review-name { font-size: 16px; font-weight: 600; color: var(--text-heading); }
+  .review-qa { margin-bottom: 10px; }
+  .review-q { font-size: 13px; color: var(--text-muted); margin-bottom: 3px; }
+  .review-a { font-size: 14px; color: var(--text-primary); line-height: 1.5; }
 </style>
 </head>
 <body>
+<div class="toolbar">
+  <button id="themeToggleBtn" class="theme-toggle-btn" type="button" title="Toggle light / dark mode" aria-label="Toggle light / dark mode"></button>
+</div>
 <div class="quiz-container" id="app"></div>
 
 <script>
@@ -603,6 +740,66 @@
     return div.innerHTML;
   }
 
+  // -------------------------------------------------------------------------
+  // Theme toggle - plain JS variable, not persisted anywhere, so it resets
+  // to light mode on every reload.
+  // -------------------------------------------------------------------------
+
+  var SUN_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="12" cy="12" r="4"></circle>' +
+    '<line x1="12" y1="2" x2="12" y2="4"></line>' +
+    '<line x1="12" y1="20" x2="12" y2="22"></line>' +
+    '<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>' +
+    '<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>' +
+    '<line x1="2" y1="12" x2="4" y2="12"></line>' +
+    '<line x1="20" y1="12" x2="22" y2="12"></line>' +
+    '<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>' +
+    '<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>' +
+    '</svg>';
+
+  var MOON_ICON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>' +
+    '</svg>';
+
+  var currentTheme = "light";
+  var themeToggleBtn = document.getElementById("themeToggleBtn");
+  themeToggleBtn.style.color = "var(--text-primary)";
+
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", currentTheme);
+    themeToggleBtn.innerHTML = currentTheme === "light" ? MOON_ICON : SUN_ICON;
+  }
+
+  themeToggleBtn.onclick = function () {
+    currentTheme = currentTheme === "light" ? "dark" : "light";
+    applyTheme();
+  };
+
+  applyTheme();
+
+  // -------------------------------------------------------------------------
+  // Avatars - flat colored circle + initials, one fixed accent color per
+  // student (by position). No external images, no game theming.
+  // -------------------------------------------------------------------------
+
+  var AVATAR_COLORS = ["#2e799e", "#a25f2f", "#6234b2", "#257e61", "#b23473", "#3468b2"];
+
+  function initials(name) {
+    return name.split(/\s+/).map(function (w) { return w[0]; }).join("").toUpperCase();
+  }
+
+  function makeAvatar(index, name, large) {
+    var span = document.createElement("span");
+    span.className = large ? "avatar avatar-lg" : "avatar";
+    span.style.background = AVATAR_COLORS[index % AVATAR_COLORS.length];
+    span.textContent = initials(name);
+    return span;
+  }
+
   function render() {
     app.innerHTML = "";
 
@@ -614,6 +811,7 @@
     else if (state.phase === "interrogate") renderInterrogate();
     else if (state.phase === "guessing") renderGuessing();
     else if (state.phase === "reveal") renderReveal();
+    else if (state.phase === "review") renderReview();
   }
 
   function renderIntro() {
@@ -665,7 +863,10 @@
 
     var studentTag = document.createElement("div");
     studentTag.className = "q-student-tag";
-    studentTag.textContent = "Interviewing: " + student.name + " (" + student.className + ")";
+    studentTag.appendChild(makeAvatar(state.studentIdx, student.name, false));
+    var studentTagText = document.createElement("span");
+    studentTagText.textContent = "Interviewing: " + student.name + " (" + student.className + ")";
+    studentTag.appendChild(studentTagText);
     app.appendChild(studentTag);
 
     if (state.awaitingContinue) {
@@ -881,6 +1082,81 @@
     var btnRow = document.createElement("div");
     btnRow.className = "btn-row center";
     btnRow.style.marginTop = "20px";
+
+    var reviewBtn = document.createElement("button");
+    reviewBtn.type = "button";
+    reviewBtn.className = "secondary-btn";
+    reviewBtn.textContent = "Review Answers";
+    reviewBtn.onclick = function () {
+      state.phase = "review";
+      render();
+    };
+    btnRow.appendChild(reviewBtn);
+
+    var again = document.createElement("button");
+    again.type = "button";
+    again.className = "primary-btn";
+    again.textContent = "Retake Quiz";
+    again.onclick = function () {
+      state = freshState();
+      render();
+    };
+    btnRow.appendChild(again);
+    app.appendChild(btnRow);
+  }
+
+  function renderReview() {
+    var title = document.createElement("div");
+    title.className = "q-title";
+    title.textContent = "Review Answers";
+    app.appendChild(title);
+
+    var intro = document.createElement("div");
+    intro.className = "intro-text";
+    intro.textContent = "Every question you asked and how each classmate responded.";
+    app.appendChild(intro);
+
+    STUDENTS.forEach(function (student, index) {
+      var item = document.createElement("div");
+      item.className = "review-item";
+
+      var head = document.createElement("div");
+      head.className = "review-item-head";
+      head.appendChild(makeAvatar(index, student.name, true));
+      var nameBlock = document.createElement("div");
+      nameBlock.innerHTML =
+        '<div class="review-name">' + escapeHtml(student.name) + '</div>' +
+        '<span class="guess-class">' + escapeHtml(student.className) + '</span>';
+      head.appendChild(nameBlock);
+      item.appendChild(head);
+
+      var convo = state.conversation[student.name];
+      convo.forEach(function (turn) {
+        var qa = document.createElement("div");
+        qa.className = "review-qa";
+        qa.innerHTML =
+          '<div class="review-q">Q: ' + escapeHtml(turn.q) + '</div>' +
+          '<div class="review-a">' + escapeHtml(turn.a) + '</div>';
+        item.appendChild(qa);
+      });
+
+      app.appendChild(item);
+    });
+
+    var btnRow = document.createElement("div");
+    btnRow.className = "btn-row center";
+    btnRow.style.marginTop = "20px";
+
+    var backBtn = document.createElement("button");
+    backBtn.type = "button";
+    backBtn.className = "secondary-btn";
+    backBtn.textContent = "Back to Results";
+    backBtn.onclick = function () {
+      state.phase = "reveal";
+      render();
+    };
+    btnRow.appendChild(backBtn);
+
     var again = document.createElement("button");
     again.type = "button";
     again.className = "primary-btn";
